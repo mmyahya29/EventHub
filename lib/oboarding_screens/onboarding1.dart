@@ -71,6 +71,7 @@ class _OnboardingScreen1State extends State<OnboardingScreen1> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Keep safe area to avoid status bar overlap
       body: SafeArea(
         child: Column(
           children: [
@@ -82,6 +83,8 @@ class _OnboardingScreen1State extends State<OnboardingScreen1> {
                 onPageChanged: _onPageChanged,
                 itemCount: _onboardingPages.length,
                 itemBuilder: (context, index) {
+                  // Use ClipRRect to apply rounded corners AND ensure the image
+                  // scales to the available space (prevent overflow).
                   return Container(
                     margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                     decoration: BoxDecoration(
@@ -94,8 +97,19 @@ class _OnboardingScreen1State extends State<OnboardingScreen1> {
                         ),
                       ],
                     ),
-                    child: Center(
-                      child: Image.asset(_onboardingPages[index].image),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      // SizedBox.expand gives the child the container constraints,
+                      // and Image.asset with BoxFit.contain/cover prevents overflow.
+                      child: SizedBox.expand(
+                        child: Image.asset(
+                          _onboardingPages[index].image,
+                          fit: BoxFit.fitHeight,
+                          width: double.infinity,
+                          height: double.infinity,
+                          gaplessPlayback: true,
+                        ),
+                      ),
                     ),
                   );
                 },
@@ -116,87 +130,103 @@ class _OnboardingScreen1State extends State<OnboardingScreen1> {
                     topRight: Radius.circular(40),
                   ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(32),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _onboardingPages[_currentPage].title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        _onboardingPages[_currentPage].description,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 32),
-                      // Dots Indicator
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          _onboardingPages.length,
-                              (index) => Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: _buildDot(_currentPage == index),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      // Navigation Buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton(
-                            onPressed: _skipOnboarding,
-                            child: const Text(
-                              'Skip',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
+                // Use LayoutBuilder + SingleChildScrollView + ConstrainedBox + IntrinsicHeight
+                // to avoid overflow on small screens while keeping content centered when possible.
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                        child: IntrinsicHeight(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(32, 24, 32, 24),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _onboardingPages[_currentPage].title,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  _onboardingPages[_currentPage].description,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 20),
+                                // Dots Indicator
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(
+                                    _onboardingPages.length,
+                                        (index) => Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                                      child: _buildDot(_currentPage == index),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                // Spacer to push buttons to bottom when there's extra space
+                                const Spacer(),
+                                // Navigation Buttons
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    TextButton(
+                                      onPressed: _skipOnboarding,
+                                      child: const Text(
+                                        'Skip',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        (_currentPage == _onboardingPages.length - 1)
+                                            ? _skipOnboarding()
+                                            : _nextPage();
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: const Color(0xFF5B4EFF),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 32,
+                                          vertical: 12,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(25),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        _currentPage == _onboardingPages.length - 1
+                                            ? 'Get Started'
+                                            : 'Next',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: (){
-                              (_currentPage == _onboardingPages.length - 1)?
-                              _skipOnboarding():
-                              _nextPage();
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF5B4EFF),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 32,
-                                vertical: 12,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(25),
-                              ),
-                            ),
-                            child: Text(
-                              _currentPage == _onboardingPages.length - 1
-                                  ? 'Get Started'
-                                  : 'Next',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ),

@@ -7,8 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.event_hub"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 34  // Updated to a specific version (Flutter default)
+    ndkVersion = "25.1.8937393"  // Updated to specific NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,14 +20,15 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.event_hub"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        // IMPORTANT: Changed minSdk to 21 for Firebase compatibility
+        minSdk = 21
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0.0"
+
+        // Enable multidex for Firebase (required for apps with many dependencies)
+        multiDexEnabled = true
     }
 
     buildTypes {
@@ -42,3 +43,17 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Firebase dependencies - these are auto-managed by FlutterFire
+    // but adding them explicitly for clarity
+    implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+    implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+
+    // Multidex support
+    implementation("androidx.multidex:multidex:2.0.1")
+}
+
+// IMPORTANT: Apply Google Services plugin at the END of the file
+apply(plugin = "com.google.gms.google-services")

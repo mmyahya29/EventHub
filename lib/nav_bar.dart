@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
-import 'main_screens/explore_screen.dart';
 import 'main_screens/events_screen.dart';
+import 'main_screens/explore_screen.dart';
 import 'main_screens/profile_screen.dart';
-
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
@@ -13,75 +13,71 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _currentIndex = 0;
+  late PersistentTabController _controller;
 
-  // List of screens
-  final List<Widget> _screens = [
-    ExploreScreen(),
-    EventsScreen(),
-    MapScreen(), // Placeholder
-    ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _controller = PersistentTabController(initialIndex: 0);
+  }
+
+  List<Widget> _buildScreens() {
+    return const [
+      ExploreScreen(),
+      EventsScreen(),
+      MapScreen(),
+      ProfileScreen(),
+    ];
+  }
+
+  List<PersistentBottomNavBarItem> _navBarsItems(BuildContext context) {
+    final Color activeColor = (Theme.of(context).brightness == Brightness.light)
+        ? const Color(0xFF5B4EFF)
+        : const Color(0xFF6D81CA);
+
+    return [
+      PersistentBottomNavBarItem(
+        icon: const Icon(Icons.explore_outlined),
+        title: ("Explore"),
+        activeColorPrimary: activeColor,
+        inactiveColorPrimary: Colors.grey,
+      ),
+      PersistentBottomNavBarItem(
+        icon: const Icon(Icons.calendar_today_outlined),
+        title: ("Events"),
+        activeColorPrimary: activeColor,
+        inactiveColorPrimary: Colors.grey,
+      ),
+      PersistentBottomNavBarItem(
+        icon: const Icon(Icons.location_on_outlined),
+        title: ("Map"),
+        activeColorPrimary: activeColor,
+        inactiveColorPrimary: Colors.grey,
+      ),
+      PersistentBottomNavBarItem(
+        icon: const Icon(Icons.person_outline),
+        title: ("Profile"),
+        activeColorPrimary: activeColor,
+        inactiveColorPrimary: Colors.grey,
+      ),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF5B4EFF),
-          unselectedItemColor: Colors.grey,
-          showSelectedLabels: true,
-          showUnselectedLabels: true,
-          selectedFontSize: 12,
-          unselectedFontSize: 12,
-          elevation: 0,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.explore_outlined),
-              activeIcon: Icon(Icons.explore),
-              label: 'Explore',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today_outlined),
-              activeIcon: Icon(Icons.calendar_today),
-              label: 'Events',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.location_on_outlined),
-              activeIcon: Icon(Icons.location_on),
-              label: 'Map',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
-        ),
-      ),
+    return PersistentTabView(
+      context,
+      controller: _controller,
+      screens: _buildScreens(),
+      items: _navBarsItems(context),
+      confineToSafeArea: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      navBarStyle: NavBarStyle.style8,
+      handleAndroidBackButtonPress: true,
     );
   }
 }
 
-// Placeholder screens - you'll replace these later
 class MapScreen extends StatelessWidget {
   const MapScreen({Key? key}) : super(key: key);
 

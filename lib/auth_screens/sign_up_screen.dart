@@ -43,6 +43,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const SizedBox(height: 40),
+              // Logo
+              Image.asset(
+                'assets/images/eventhublogo.png',
+                height: 60,
+              ),
+              const SizedBox(height: 40),
               // Title
               const Text(
                 'Sign up',
@@ -231,11 +238,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onPressed: () {
                   // Google sign up - leave empty for now
                 },
-                icon: Image.asset(
-                  'assets/images/google_icon.png',
-                  height: 24,
-                  width: 24,
-                ),
+                // icon: Image.asset(
+                //   'assets/images/google_icon.png',
+                //   height: 24,
+                //   width: 24,
+                // ),
                 label: const Text(
                   'Login with Google',
                   style: TextStyle(
@@ -257,11 +264,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 onPressed: () {
                   // Facebook sign up - leave empty for now
                 },
-                icon: Image.asset(
-                  'assets/images/facebook_icon.png',
-                  height: 24,
-                  width: 24,
-                ),
+                // icon: Image.asset(
+                //   'assets/images/facebook_icon.png',
+                //   height: 24,
+                //   width: 24,
+                // ),
                 label: const Text(
                   'Login with Facebook',
                   style: TextStyle(

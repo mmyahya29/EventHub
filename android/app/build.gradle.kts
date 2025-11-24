@@ -7,8 +7,8 @@ plugins {
 
 android {
     namespace = "com.example.event_hub"
-    compileSdk = 34  // Updated to a specific version (Flutter default)
-    ndkVersion = "25.1.8937393"  // Updated to specific NDK version
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion // Updated to specific NDK version
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -22,10 +22,10 @@ android {
     defaultConfig {
         applicationId = "com.example.event_hub"
         // IMPORTANT: Changed minSdk to 21 for Firebase compatibility
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
 
         // Enable multidex for Firebase (required for apps with many dependencies)
         multiDexEnabled = true

@@ -1,20 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:event_hub/providers/auth_provider.dart';
 import 'verification_screen.dart';
 
-class SignUpScreen extends StatefulWidget {
+class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -23,6 +28,137 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  // Email validation
+  bool _emailValidator(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
+  // Get user-friendly error messages
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'email-already-in-use':
+        return 'This email is already registered.';
+      case 'invalid-email':
+        return 'The email address is invalid.';
+      case 'operation-not-allowed':
+        return 'Email/password accounts are not enabled.';
+      case 'weak-password':
+        return 'The password is too weak. Use at least 6 characters.';
+      default:
+        return 'An error occurred. Please try again.';
+    }
+  }
+
+  // Sign up with email and password
+  Future<void> _signup() async {
+    final auth = ref.read(firebaseAuthProvider);
+    final firestore = ref.read(firestoreProvider);
+
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    // Validation
+    if (name.isEmpty) {
+      _showSnackBar('Please enter your name', isError: true);
+      return;
+    }
+
+    if (!_emailValidator(email)) {
+      _showSnackBar('Invalid Email', isError: true);
+      return;
+    }
+
+    if (password.isEmpty || confirmPassword.isEmpty) {
+      _showSnackBar('Please enter your password', isError: true);
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showSnackBar('Passwords do not match', isError: true);
+      return;
+    }
+
+    if (password.length < 6) {
+      _showSnackBar('Password must be at least 6 characters', isError: true);
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Create user account
+      final userCredential = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = userCredential.user;
+
+      if (user != null) {
+        // Update display name
+        await user.updateDisplayName(name);
+        await user.reload();
+
+        // Save user data to Firestore
+        await firestore.collection('users').doc(user.uid).set({
+          'uid': user.uid,
+          'name': name,
+          'email': email,
+          'createdAt': FieldValue.serverTimestamp(),
+          'following': 0,
+          'followers': 0,
+          'bio': 'Enjoy your favorite dishe and a lovely your friends and family and have a great time. Food from local food trucks will be available for purchase.',
+          'interests': ['Gaming', 'Clubbing', 'Concerts', 'Music', 'Theater', 'Art'],
+        });
+
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          _showSnackBar('Account Created Successfully', isError: false);
+
+          // Navigate to verification screen (optional - you can skip this if not needed)
+          // Or the app will automatically navigate to MainNavigation via authStateProvider
+          // Uncomment below if you want to show verification screen first
+          /*
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const VerificationScreen(),
+            ),
+          );
+          */
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      String message = _getErrorMessage(e.code);
+      _showSnackBar(message, isError: true);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('An unexpected error occurred', isError: true);
+    }
+  }
+
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isError ? '❌ $message' : '✅ $message'),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -182,16 +318,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               const SizedBox(height: 24),
               // Sign Up Button
-              ElevatedButton(
-                onPressed: () {
-                  // Navigate to verification screen
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const VerificationScreen(),
-                    ),
-                  );
-                },
+              _isLoading
+                  ? Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5B4EFF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+              )
+                  : ElevatedButton(
+                onPressed: _signup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B4EFF),
                   foregroundColor: Colors.white,
@@ -236,13 +377,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Google Sign Up
               OutlinedButton.icon(
                 onPressed: () {
-                  // Google sign up - leave empty for now
+                  _showSnackBar('Google Sign-Up coming soon!', isError: false);
                 },
-                // icon: Image.asset(
-                //   'assets/images/google_icon.png',
-                //   height: 24,
-                //   width: 24,
-                // ),
+                icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.black87),
                 label: const Text(
                   'Login with Google',
                   style: TextStyle(
@@ -262,13 +399,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
               // Facebook Sign Up
               OutlinedButton.icon(
                 onPressed: () {
-                  // Facebook sign up - leave empty for now
+                  _showSnackBar('Facebook Sign-Up coming soon!', isError: false);
                 },
-                // icon: Image.asset(
-                //   'assets/images/facebook_icon.png',
-                //   height: 24,
-                //   width: 24,
-                // ),
+                icon: const Icon(Icons.facebook, color: Colors.blue),
                 label: const Text(
                   'Login with Facebook',
                   style: TextStyle(

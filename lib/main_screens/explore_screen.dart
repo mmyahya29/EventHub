@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'add_events_screens.dart';
 import 'events_subscreens/event_details_screen.dart';
 import 'explore_subscreens/notifications_screen.dart';
 import 'explore_subscreens/side_drawer.dart';
@@ -380,7 +381,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Add event action
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AddEventScreen(),
+            ),
+          );
         },
         backgroundColor: const Color(0xFF5B4EFF),
         child: const Icon(Icons.add, color: Colors.white),

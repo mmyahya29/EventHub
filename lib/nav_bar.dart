@@ -1,3 +1,4 @@
+import 'package:event_hub/main_screens/add_events_screens.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
@@ -72,7 +73,7 @@ class _MainNavigationState extends State<MainNavigation> {
       items: _navBarsItems(context),
       confineToSafeArea: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      navBarStyle: NavBarStyle.style8,
+      navBarStyle: NavBarStyle.style9,
       handleAndroidBackButtonPress: true,
     );
   }

@@ -1,27 +1,109 @@
 import 'package:event_hub/auth_screens/reset_password_screen.dart';
 import 'package:flutter/material.dart';
-import '../nav_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:event_hub/providers/auth_provider.dart';
 import 'sign_up_screen.dart';
 
-
-class SignInScreen extends StatefulWidget {
+class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
 
   @override
-  State<SignInScreen> createState() => _SignInScreenState();
+  ConsumerState<SignInScreen> createState() => _SignInScreenState();
 }
 
-class _SignInScreenState extends State<SignInScreen> {
+class _SignInScreenState extends ConsumerState<SignInScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  // Email validation
+  bool _emailValidator(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
+  // Get user-friendly error messages
+  String _getErrorMessage(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'No user found with this email.';
+      case 'wrong-password':
+        return 'Wrong password provided.';
+      case 'invalid-email':
+        return 'The email address is invalid.';
+      case 'user-disabled':
+        return 'This user account has been disabled.';
+      case 'too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'invalid-credential':
+        return 'Invalid email or password.';
+      default:
+        return 'An error occurred. Please try again.';
+    }
+  }
+
+  // Sign in with email and password
+  Future<void> _authenticate() async {
+    final auth = ref.read(firebaseAuthProvider);
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (!_emailValidator(email)) {
+      _showSnackBar('Invalid Email', isError: true);
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showSnackBar('Please enter your password', isError: true);
+      return;
+    }
+
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        _showSnackBar('Login Successful', isError: false);
+        // Navigation will happen automatically via authStateProvider in main.dart
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      String message = _getErrorMessage(e.code);
+      _showSnackBar(message, isError: true);
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('An unexpected error occurred', isError: true);
+    }
+  }
+
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(isError ? '❌ $message' : '✅ $message'),
+        backgroundColor: isError ? Colors.red : Colors.green,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -151,15 +233,21 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
               const SizedBox(height: 24),
               // Sign In Button
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const MainNavigation(), // Changed from DummyHomeScreen
-                    ),
-                  );
-                },
+              _isLoading
+                  ? Container(
+                height: 56,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5B4EFF),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
+                ),
+              )
+                  : ElevatedButton(
+                onPressed: _authenticate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B4EFF),
                   foregroundColor: Colors.white,
@@ -204,13 +292,9 @@ class _SignInScreenState extends State<SignInScreen> {
               // Google Sign In
               OutlinedButton.icon(
                 onPressed: () {
-                  // Google sign in - leave empty for now
+                  _showSnackBar('Google Sign-In coming soon!', isError: false);
                 },
-                // icon: Image.asset(
-                //   'assets/images/google_icon.png',
-                //   height: 24,
-                //   width: 24,
-                // ),
+                icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.black87),
                 label: const Text(
                   'Login with Google',
                   style: TextStyle(
@@ -230,13 +314,9 @@ class _SignInScreenState extends State<SignInScreen> {
               // Facebook Sign In
               OutlinedButton.icon(
                 onPressed: () {
-                  // Facebook sign in - leave empty for now
+                  _showSnackBar('Facebook Sign-In coming soon!', isError: false);
                 },
-                // icon: Image.asset(
-                //   'assets/images/facebook_icon.png',
-                //   height: 24,
-                //   width: 24,
-                // ),
+                icon: const Icon(Icons.facebook, color: Colors.blue),
                 label: const Text(
                   'Login with Facebook',
                   style: TextStyle(

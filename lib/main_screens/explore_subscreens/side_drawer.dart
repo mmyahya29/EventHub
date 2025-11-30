@@ -1,12 +1,23 @@
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/FAQ_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/chats_list_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AppDrawer extends StatelessWidget {
-  const AppDrawer({Key? key}) : super(key: key);
+import '../../providers/auth_provider.dart';
+
+class AppDrawer extends ConsumerStatefulWidget {
+
+  const AppDrawer({super.key,});
+
+  @override
+  ConsumerState<AppDrawer> createState() => _AppDrawerState();
+}
+
+class _AppDrawerState extends ConsumerState<AppDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = ref.read(firebaseAuthProvider);
     return Drawer(
       child: Container(
         color: Colors.white,
@@ -133,7 +144,7 @@ class AppDrawer extends StatelessWidget {
                     title: 'Sign Out',
                     textColor: const Color(0xFFFF6B6B),
                     onTap: () {
-                      // Sign out action
+                      auth.signOut();
                     },
                   ),
                 ],

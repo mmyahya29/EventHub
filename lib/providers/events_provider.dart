@@ -18,9 +18,9 @@ final eventsStreamProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
       .map((snapshot) {
     return snapshot.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
-      data['id'] = doc.id; // Add document ID to the map
+      data['id'] = doc.id;
       return data;
-    }).toList();
+    }). toList();
   });
 });
 
@@ -31,7 +31,8 @@ final upcomingEventsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) 
 
   return eventsCollection
       .where('date', isGreaterThanOrEqualTo: now)
-      .orderBy('date', descending: false)
+      . orderBy('date', descending: false)
+      .limit(10)
       .snapshots()
       .map((snapshot) {
     return snapshot.docs.map((doc) {
@@ -42,20 +43,58 @@ final upcomingEventsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) 
   });
 });
 
-// Get events by category
-final eventsByCategoryProvider = StreamProvider.family<List<Map<String, dynamic>>, String>((ref, category) {
+// Stream of past events only (past dates)
+final pastEventsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   final eventsCollection = ref.watch(eventsCollectionProvider);
+  final now = Timestamp.now();
 
   return eventsCollection
-      .where('category', isEqualTo: category)
-      .orderBy('date', descending: false)
+      . where('date', isLessThan: now)
+      .orderBy('date', descending: true)
+      .limit(10)
       .snapshots()
       .map((snapshot) {
-    return snapshot.docs.map((doc) {
+    return snapshot.docs. map((doc) {
       final data = doc.data() as Map<String, dynamic>;
       data['id'] = doc.id;
       return data;
-    }).toList();
+    }). toList();
+  });
+});
+
+// ✅ FIXED: Get events by category (client-side filtering to avoid composite index)
+final eventsByCategoryProvider = StreamProvider. family<List<Map<String, dynamic>>, String>((ref, category) {
+  final eventsCollection = ref.watch(eventsCollectionProvider);
+
+  // ✅ For "All", get ALL events (no date filter)
+  if (category == 'All') {
+    return eventsCollection
+        .orderBy('date', descending: false)
+        .limit(50) // Increased limit to show more events
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    });
+  }
+
+  // For specific categories: Get all events and filter client-side
+  // This avoids the composite index requirement
+  return eventsCollection
+      . orderBy('date', descending: false)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs
+        .map((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+      data['id'] = doc.id;
+      return data;
+    })
+        .where((event) => event['category'] == category)
+        .toList();
   });
 });
 
@@ -64,7 +103,7 @@ final eventByIdProvider = StreamProvider.family<Map<String, dynamic>?, String>((
   final eventsCollection = ref.watch(eventsCollectionProvider);
 
   return eventsCollection
-      .doc(eventId)
+      . doc(eventId)
       .snapshots()
       .map((snapshot) {
     if (snapshot.exists) {
@@ -102,9 +141,9 @@ final searchEventsProvider = StreamProvider.family<List<Map<String, dynamic>>, S
   }
 
   return eventsCollection
-      .orderBy('title')
+      . orderBy('title')
       .startAt([searchQuery])
-      .endAt(['$searchQuery\uf8ff'])
+      . endAt(['$searchQuery\uf8ff'])
       .snapshots()
       .map((snapshot) {
     return snapshot.docs.map((doc) {
@@ -115,20 +154,44 @@ final searchEventsProvider = StreamProvider.family<List<Map<String, dynamic>>, S
   });
 });
 
-// Get nearby events (you'll need to implement geo queries for this)
-// For now, just returns all events
+// Get nearby events (filtered by New York location for now)
 final nearbyEventsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   final eventsCollection = ref.watch(eventsCollectionProvider);
+  final now = Timestamp.now();
 
   return eventsCollection
-      .orderBy('date', descending: false)
+      . where('date', isGreaterThanOrEqualTo: now)
+      . orderBy('date', descending: false)
       .limit(10)
       .snapshots()
       .map((snapshot) {
-    return snapshot.docs.map((doc) {
+    final allEvents = snapshot.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
       data['id'] = doc.id;
       return data;
     }).toList();
+
+    return allEvents.where((event) {
+      final address = (event['address'] as String?  ?? '').toLowerCase();
+      return address.contains('new york') || address.contains('ny') || address.contains('usa');
+    }).toList();
   });
 });
+
+// Selected category notifier
+class SelectedCategoryNotifier extends Notifier<String> {
+  @override
+  String build() => 'All';
+
+  void setCategory(String category) {
+    state = category;
+  }
+
+  void reset() {
+    state = 'All';
+  }
+}
+
+final selectedCategoryProvider = NotifierProvider<SelectedCategoryNotifier, String>(
+  SelectedCategoryNotifier. new,
+);

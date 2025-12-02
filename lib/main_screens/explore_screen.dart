@@ -1,22 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../providers/events_provider.dart';
 
 import 'add_events_screens.dart';
 import 'events_subscreens/event_details_screen.dart';
 import 'explore_subscreens/notifications_screen.dart';
 import 'explore_subscreens/side_drawer.dart';
 
-class ExploreScreen extends StatefulWidget {
+class ExploreScreen extends ConsumerStatefulWidget {
   const ExploreScreen({Key? key}) : super(key: key);
 
   @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
+  ConsumerState<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>(); // Add this
-  int _selectedCategoryIndex = 0;
+class _ExploreScreenState extends ConsumerState<ExploreScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final TextEditingController _searchController = TextEditingController();
 
   final List<CategoryItem> _categories = [
+    CategoryItem('All', const Color(0xFF5B4EFF), Icons.grid_view),
     CategoryItem('Sports', const Color(0xFFFF6B6B), Icons.sports_soccer),
     CategoryItem('Music', const Color(0xFFFF9B57), Icons.music_note),
     CategoryItem('Food', const Color(0xFF4CAF50), Icons.restaurant),
@@ -24,14 +28,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
   ];
 
   @override
+  void dispose() {
+    _searchController. dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final selectedCategory = ref.watch(selectedCategoryProvider);
+    final upcomingEventsAsync = ref.watch(upcomingEventsProvider);
+    final nearbyEventsAsync = ref.watch(nearbyEventsProvider);
+
     return Scaffold(
-      key: _scaffoldKey, // Add this
-      drawer: AppDrawer(), // Add this
+      key: _scaffoldKey,
+      drawer: const AppDrawer(),
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
+            // Header with gradient
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -51,7 +66,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         IconButton(
                           icon: const Icon(Icons.menu, color: Colors.white, size: 28),
                           onPressed: () {
-                            _scaffoldKey.currentState?.openDrawer(); // Add this
+                            _scaffoldKey. currentState?.openDrawer();
                           },
                         ),
                         Column(
@@ -59,7 +74,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             const Text(
                               'Current Location',
                               style: TextStyle(
-                                color: Colors.white70,
+                                color: Colors. white70,
                                 fontSize: 12,
                               ),
                             ),
@@ -86,12 +101,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         Stack(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 28),
+                              icon: const Icon(Icons.notifications_outlined,
+                                  color: Colors. white, size: 28),
                               onPressed: () {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => NotificationScreen(),
+                                    builder: (context) => const NotificationScreen(),
                                   ),
                                 );
                               },
@@ -120,7 +136,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white. withOpacity(0.2),
                               borderRadius: BorderRadius.circular(30),
                             ),
                             child: Row(
@@ -129,12 +145,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: TextField(
+                                    controller: _searchController,
                                     style: const TextStyle(color: Colors.white),
                                     decoration: InputDecoration(
-                                      hintText: 'Search...',
-                                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                                      hintText: 'Search.. .',
+                                      hintStyle: TextStyle(
+                                          color: Colors.white. withOpacity(0.7)),
                                       border: InputBorder.none,
-                                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                      contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                     ),
                                   ),
                                 ),
@@ -167,18 +186,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 itemCount: _categories.length,
                 itemBuilder: (context, index) {
                   final category = _categories[index];
-                  final isSelected = _selectedCategoryIndex == index;
+                  final isSelected = selectedCategory == category.name;
                   return GestureDetector(
                     onTap: () {
-                      setState(() {
-                        _selectedCategoryIndex = index;
-                      });
+                      ref.read(selectedCategoryProvider.notifier).state =
+                          category.name;
                     },
                     child: Container(
                       margin: const EdgeInsets.only(right: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ? category.color : Colors.grey[100],
+                        color: isSelected ?  category.color : Colors.grey[100],
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -192,7 +210,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           Text(
                             category.name,
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.grey[700],
+                              color: isSelected ? Colors. white : Colors.grey[700],
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -237,36 +255,64 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 ),
                               ),
                               SizedBox(width: 4),
-                              Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 12),
+                              Icon(Icons.arrow_forward_ios,
+                                  color: Colors.grey, size: 12),
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // Event Cards
-                    SizedBox(
-                      height: 240,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        children: [
-                          _buildEventCard(
-                            '10',
-                            'JUNE',
-                            'International Band Mu...',
-                            'Jo Malone',
-                            '36 Guild Street London, UK',
-                            Colors.pink[100]!,
+                    // Upcoming Events List
+                    upcomingEventsAsync.when(
+                      data: (events) {
+                        if (events.isEmpty) {
+                          return Container(
+                            height: 240,
+                            alignment: Alignment.center,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.event_busy,
+                                    size: 48, color: Colors.grey[400]),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No upcoming events',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return SizedBox(
+                          height: 240,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: events.length,
+                            itemBuilder: (context, index) {
+                              final event = events[index];
+                              return _buildEventCard(event);
+                            },
                           ),
-                          _buildEventCard(
-                            '10',
-                            'JUNE',
-                            'Jo Malone London\'s Mo...',
-                            'Tomorrowland',
-                            'Radius Gallery • Santa Cruz, CA',
-                            Colors.blue[100]!,
-                          ),
-                        ],
+                        );
+                      },
+                      loading: () => Container(
+                        height: 240,
+                        alignment: Alignment.center,
+                        child: const CircularProgressIndicator(
+                          color: Color(0xFF5B4EFF),
+                        ),
+                      ),
+                      error: (error, stack) => Container(
+                        height: 240,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Error loading events',
+                          style: TextStyle(color: Colors.red[400]),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -307,7 +353,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF00CEC9),
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 10),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -326,15 +373,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          // Placeholder for illustration
                           Container(
                             width: 100,
                             height: 100,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white. withOpacity(0.5),
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.card_giftcard, size: 50, color: Colors.white),
+                            child: const Icon(Icons.card_giftcard,
+                                size: 50, color: Colors.white),
                           ),
                         ],
                       ),
@@ -366,11 +413,60 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 ),
                               ),
                               SizedBox(width: 4),
-                              Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 12),
+                              Icon(Icons. arrow_forward_ios,
+                                  color: Colors.grey, size: 12),
                             ],
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Nearby Events
+                    nearbyEventsAsync. when(
+                      data: (events) {
+                        if (events.isEmpty) {
+                          return Container(
+                            padding: const EdgeInsets.all(32),
+                            alignment: Alignment.center,
+                            child: Column(
+                              children: [
+                                Icon(Icons.location_off,
+                                    size: 48, color: Colors.grey[400]),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'No nearby events found',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: events. take(3).map((event) {
+                            return _buildNearbyEventCard(event);
+                          }).toList(),
+                        );
+                      },
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFF5B4EFF),
+                          ),
+                        ),
+                      ),
+                      error: (error, stack) => Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Text(
+                            'Error loading nearby events',
+                            style: TextStyle(color: Colors.red[400]),
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -384,7 +480,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddEventScreen(),
+              builder: (context) => const AddEventScreen(),
             ),
           );
         },
@@ -394,36 +490,200 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _buildEventCard(
-      String day,
-      String month,
-      String title,
-      String organizer,
-      String location,
-      Color backgroundColor,
-      ) {
-    final eventData = {
-      'day': day,
-      'month': month,
-      'title': title,
-      'organizer': organizer,
-      'location': location,
-      'color': backgroundColor,
-      'description': 'Enjoy your favorite dishe and a lovely your friends and family and have a great time. Food from local food trucks will be available for purchase.',
-    };
+  Widget _buildEventCard(Map<String, dynamic> event) {
+    final backgroundColor = _getColorForCategory(event['category'] ?? 'Music');
 
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(event: eventData),
+            builder: (context) => EventDetailsScreen(eventId: event['id']),
           ),
         );
       },
       child: Container(
         width: 240,
         margin: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius. circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Event Image/Placeholder
+            Container(
+              height: 130,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Center(
+                    child: Icon(
+                      Icons.image,
+                      size: 50,
+                      color: Colors. white. withOpacity(0.5),
+                    ),
+                  ),
+                  // Date Badge
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius. circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            event['day'] ?? '10',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFFF5757),
+                            ),
+                          ),
+                          Text(
+                            (event['month'] ?? 'JUNE'). substring(0, 3). toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFFF5757),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Bookmark
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.bookmark_border,
+                        color: Color(0xFFFF5757),
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Event Details
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event['title'] ?? 'Event Title',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      // Attendee Avatars
+                      SizedBox(
+                        width: 60,
+                        height: 24,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: 0,
+                              child: _buildSmallAvatar(Colors.blue),
+                            ),
+                            Positioned(
+                              left: 16,
+                              child: _buildSmallAvatar(Colors.pink),
+                            ),
+                            Positioned(
+                              left: 32,
+                              child: _buildSmallAvatar(Colors.green),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '+${event['attendees'] ?? 20} Going',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF5B4EFF),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on, size: 14, color: Colors. grey),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          event['location'] ?? 'Location',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors. grey,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNearbyEventCard(Map<String, dynamic> event) {
+    final backgroundColor = _getColorForCategory(event['category'] ?? 'Music');
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailsScreen(eventId: event['id']),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -435,9 +695,110 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
           ],
         ),
-        // ... rest of the container content
+        child: Row(
+          children: [
+            // Event Image
+            Container(
+              width: 80,
+              height: 100,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: const BorderRadius. horizontal(
+                  left: Radius.circular(16),
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.image,
+                  size: 40,
+                  color: Colors. white.withOpacity(0.5),
+                ),
+              ),
+            ),
+            // Event Details
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment. start,
+                  children: [
+                    Text(
+                      '${event['day']} ${event['month']}, ${event['startTime'] ?? ''}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF5B4EFF),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      event['title'] ?? 'Event Title',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors. black87,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            event['address'] ?? 'Address',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  Widget _buildSmallAvatar(Color color) {
+    return Container(
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+      ),
+      child: const Icon(Icons.person, color: Colors.white, size: 12),
+    );
+  }
+
+  Color _getColorForCategory(String category) {
+    switch (category.toLowerCase()) {
+      case 'sports':
+        return const Color(0xFFFF6B6B);
+      case 'music':
+        return const Color(0xFFFF9B57);
+      case 'food':
+        return const Color(0xFF4CAF50);
+      case 'art':
+        return const Color(0xFF9C27B0);
+      case 'clubbing':
+        return const Color(0xFF00D9A5);
+      case 'theater':
+        return const Color(0xFF5B4EFF);
+      default:
+        return Colors.pink[100]!;
+    }
   }
 }
 

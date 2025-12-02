@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/events_provider.dart';
 import 'event_details_screen.dart';
 
-class OrganizerProfileScreen extends StatefulWidget {
+class OrganizerProfileScreen extends ConsumerStatefulWidget {
   final String organizerName;
   final String organizerId;
 
@@ -12,10 +14,10 @@ class OrganizerProfileScreen extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<OrganizerProfileScreen> createState() => _OrganizerProfileScreenState();
+  ConsumerState<OrganizerProfileScreen> createState() => _OrganizerProfileScreenState();
 }
 
-class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
+class _OrganizerProfileScreenState extends ConsumerState<OrganizerProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isFollowing = false;
@@ -37,7 +39,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors. white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
@@ -45,7 +47,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            icon: const Icon(Icons.more_vert, color: Colors. black87),
             onPressed: () {
               _showOptionsMenu(context);
             },
@@ -74,13 +76,13 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                   child: const Icon(
                     Icons.person,
                     size: 45,
-                    color: Colors.grey,
+                    color: Colors. grey,
                   ),
                 ),
                 const SizedBox(height: 16),
                 // Name
                 Text(
-                  widget.organizerName,
+                  widget. organizerName,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -114,7 +116,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                           });
                         },
                         icon: Icon(
-                          _isFollowing ? Icons.check : Icons.person_add_outlined,
+                          _isFollowing ?  Icons.check : Icons.person_add_outlined,
                           size: 18,
                         ),
                         label: Text(_isFollowing ? 'Following' : 'Follow'),
@@ -143,7 +145,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                             color: Color(0xFF5B4EFF),
                             width: 1.5,
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets. symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -159,7 +161,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
           Container(
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!),
+                bottom: BorderSide(color: Colors.grey[200]! ),
               ),
             ),
             child: TabBar(
@@ -230,7 +232,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Enjoy your favorite dishe and a lovely your friends and family and have a great time. Food from local food trucks will be available for purchase.',
+            'Enjoy your favorite dishe and a lovely your friends and family and have a great time.  Food from local food trucks will be available for purchase.',
             style: TextStyle(
               fontSize: 15,
               color: Colors.black87,
@@ -272,45 +274,101 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
     );
   }
 
-  // EVENT TAB
+  // EVENT TAB - Now using Riverpod
   Widget _buildEventTab() {
-    final List<Map<String, dynamic>> events = [
-      {
-        'title': 'A Virtual Evening of smooth jazz',
-        'date': 'SAT, MAY 20 • 2:30 PM',
-        'location': 'Radius Gallery • Santa Cruz, CA',
-        'color': Colors.purple[100],
-      },
-      {
-        'title': 'Jo malone london\'s mother\'s day',
-        'date': 'SAT, MAY 20 • 2:30 PM',
-        'location': 'Radius Gallery • Santa Cruz, CA',
-        'color': Colors.pink[100],
-      },
-      {
-        'title': 'Women\'s leadership conference',
-        'date': 'SAT, MAY 20 • 2:30 PM',
-        'location': 'Radius Gallery • Santa Cruz, CA',
-        'color': Colors.blue[100],
-      },
-    ];
+    // Only fetch events if organizerId is provided
+    if (widget.organizerId.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No events available',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: events.length,
-      itemBuilder: (context, index) {
-        return _buildEventCard(events[index]);
+    final eventsAsync = ref.watch(eventsByOrganizerProvider(widget. organizerId));
+
+    return eventsAsync.when(
+      data: (events) {
+        if (events.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons. event_busy, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  'No events yet',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors. grey[600],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'This organizer hasn\'t created any events',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: events. length,
+          itemBuilder: (context, index) {
+            return _buildEventCard(events[index]);
+          },
+        );
       },
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF5B4EFF),
+        ),
+      ),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading events',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.red[600],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildEventCard(Map<String, dynamic> event) {
+    final backgroundColor = _getColorForCategory(event['category'] ?? 'Music');
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => EventDetailsScreen(event: event),
+            builder: (context) => EventDetailsScreen(eventId: event['id']),
           ),
         );
       },
@@ -318,7 +376,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius. circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.08),
@@ -334,14 +392,14 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
               width: 80,
               height: 100,
               decoration: BoxDecoration(
-                color: event['color'],
+                color: backgroundColor,
                 borderRadius: const BorderRadius.horizontal(
                   left: Radius.circular(16),
                 ),
               ),
               child: Center(
                 child: Icon(
-                  Icons.image,
+                  Icons. image,
                   size: 40,
                   color: Colors.white.withOpacity(0.5),
                 ),
@@ -355,7 +413,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      event['date'],
+                      '${event['day']} ${event['month']}, ${event['startTime'] ?? ''}',
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF5B4EFF),
@@ -364,11 +422,11 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      event['title'],
+                      event['title'] ??  'Event Title',
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors. black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -380,7 +438,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            event['location'],
+                            event['location'] ?? 'Location',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Colors.grey,
@@ -399,6 +457,25 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
         ),
       ),
     );
+  }
+
+  Color _getColorForCategory(String category) {
+    switch (category. toLowerCase()) {
+      case 'sports':
+        return const Color(0xFFFF6B6B);
+      case 'music':
+        return const Color(0xFFFF9B57);
+      case 'food':
+        return const Color(0xFF4CAF50);
+      case 'art':
+        return const Color(0xFF9C27B0);
+      case 'clubbing':
+        return const Color(0xFF00D9A5);
+      case 'theater':
+        return const Color(0xFF5B4EFF);
+      default:
+        return Colors.pink[100]! ;
+    }
   }
 
   // REVIEWS TAB
@@ -481,7 +558,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
                     review['date'],
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[500],
+                      color: Colors. grey[500],
                     ),
                   ),
                 ],
@@ -500,7 +577,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
             );
           }),
         ),
-        if (review['comment'].isNotEmpty) ...[
+        if (review['comment']. isNotEmpty) ...[
           const SizedBox(height: 12),
           Text(
             review['comment'],
@@ -525,7 +602,7 @@ class _OrganizerProfileScreenState extends State<OrganizerProfileScreen>
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize. min,
           children: [
             ListTile(
               leading: const Icon(Icons.share_outlined),

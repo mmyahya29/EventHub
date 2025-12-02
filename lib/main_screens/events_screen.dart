@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/events_provider.dart';
 import 'events_subscreens/explore_events_screen.dart';
+import 'events_subscreens/event_details_screen.dart';
 
-class EventsScreen extends StatefulWidget {
+class EventsScreen extends ConsumerStatefulWidget {
   const EventsScreen({Key? key}) : super(key: key);
 
   @override
-  State<EventsScreen> createState() => _EventsScreenState();
+  ConsumerState<EventsScreen> createState() => _EventsScreenState();
 }
 
-class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderStateMixin {
+class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -32,9 +34,9 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons. arrow_back, color: Colors. black87),
           onPressed: () {
-            // Back action - or you can remove this if you don't need it
+            // Back action
           },
         ),
         title: const Text(
@@ -47,7 +49,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black87),
+            icon: const Icon(Icons. more_vert, color: Colors. black87),
             onPressed: () {
               // More options action
             },
@@ -70,7 +72,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black. withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -84,7 +86,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
               ),
               unselectedLabelStyle: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight. w500,
               ),
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
@@ -100,15 +102,176 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
               controller: _tabController,
               children: [
                 // Upcoming Events Tab
-                _buildEmptyEventsView(),
+                _buildEventsTab(isUpcoming: true),
                 // Past Events Tab
-                _buildEmptyEventsView(),
+                _buildEventsTab(isUpcoming: false),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildEventsTab({required bool isUpcoming}) {
+    final eventsAsync = isUpcoming
+        ? ref.watch(upcomingEventsProvider)
+        : ref.watch(pastEventsProvider);
+
+    return eventsAsync. when(
+      data: (events) {
+        if (events.isEmpty) {
+          return _buildEmptyEventsView();
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: events.length,
+          itemBuilder: (context, index) {
+            return _buildEventCard(events[index]);
+          },
+        );
+      },
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFF5B4EFF),
+        ),
+      ),
+      error: (error, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading events',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.red[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEventCard(Map<String, dynamic> event) {
+    final backgroundColor = _getColorForCategory(event['category'] ?? 'Music');
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailsScreen(eventId: event['id']),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Event Image
+            Container(
+              width: 80,
+              height: 100,
+              decoration: BoxDecoration(
+                color: backgroundColor,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(16),
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.image,
+                  size: 40,
+                  color: Colors. white. withOpacity(0.5),
+                ),
+              ),
+            ),
+            // Event Details
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${event['day']} ${event['month']}, ${event['startTime'] ?? ''}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF5B4EFF),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      event['title'] ?? 'Event Title',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            event['location'] ?? 'Location',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors. grey,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getColorForCategory(String category) {
+    switch (category. toLowerCase()) {
+      case 'sports':
+        return const Color(0xFFFF6B6B);
+      case 'music':
+        return const Color(0xFFFF9B57);
+      case 'food':
+        return const Color(0xFF4CAF50);
+      case 'art':
+        return const Color(0xFF9C27B0);
+      case 'clubbing':
+        return const Color(0xFF00D9A5);
+      case 'theater':
+        return const Color(0xFF5B4EFF);
+      default:
+        return Colors.pink[100]!;
+    }
   }
 
   Widget _buildEmptyEventsView() {
@@ -219,15 +382,10 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                           ),
                         ],
                       ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          const Icon(
-                            Icons.access_time,
-                            color: Color(0xFF5B4EFF),
-                            size: 28,
-                          ),
-                        ],
+                      child: const Icon(
+                        Icons. access_time,
+                        color: Color(0xFF5B4EFF),
+                        size: 28,
                       ),
                     ),
                   ],
@@ -261,7 +419,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EventsListScreen(),
+                    builder: (context) => const EventsListScreen(),
                   ),
                 );
               },
@@ -270,7 +428,7 @@ class _EventsScreenState extends State<EventsScreen> with SingleTickerProviderSt
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius. circular(12),
                 ),
                 elevation: 0,
               ),

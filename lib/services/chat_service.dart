@@ -13,7 +13,7 @@ class ChatService {
       final participants = [currentUserId, otherUserId].. sort();
       final chatId = participants.join('_');
 
-      final chatDoc = await _firestore.collection('chats').doc(chatId). get();
+      final chatDoc = await _firestore. collection('chats'). doc(chatId).get();
 
       if (!chatDoc.exists) {
         // Create new chat room
@@ -43,7 +43,7 @@ class ChatService {
     required String senderId,
     required String senderName,
     required String text,
-    String?  imageUrl,
+    String? imageUrl,
   }) async {
     try {
       // Add message to messages subcollection
@@ -63,7 +63,7 @@ class ChatService {
 
       // Update chat room's last message
       final chatDoc = await _firestore. collection('chats').doc(chatId).get();
-      final participants = List<String>.from(chatDoc. data()?['participants'] ?? []);
+      final participants = List<String>.from(chatDoc.data()?['participants'] ?? []);
 
       // Increment unread count for the other user
       final otherUserId = participants.firstWhere((id) => id != senderId);
@@ -90,19 +90,26 @@ class ChatService {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => ChatMessage.fromFirestore(doc)).toList();
+      return snapshot.docs. map((doc) => ChatMessage.fromFirestore(doc)). toList();
     });
   }
 
-  // Get user's chat rooms
+  // ✅ FIXED: Get user's chat rooms (client-side sorting to avoid composite index)
   Stream<List<ChatRoom>> getUserChats(String userId) {
     return _firestore
         .collection('chats')
         .where('participants', arrayContains: userId)
-        .orderBy('lastMessageTime', descending: true)
-        .snapshots()
+        . snapshots()
         .map((snapshot) {
-      return snapshot.docs. map((doc) => ChatRoom. fromFirestore(doc)).toList();
+      // Convert to ChatRoom objects
+      final chatRooms = snapshot.docs
+          .map((doc) => ChatRoom.fromFirestore(doc))
+          .toList();
+
+      // Sort client-side by lastMessageTime (descending)
+      chatRooms.sort((a, b) => b.lastMessageTime.compareTo(a. lastMessageTime));
+
+      return chatRooms;
     });
   }
 
@@ -113,7 +120,7 @@ class ChatService {
       final unreadCount = Map<String, dynamic>.from(chatDoc.data()?['unreadCount'] ?? {});
       unreadCount[userId] = 0;
 
-      await _firestore.collection('chats').doc(chatId). update({
+      await _firestore.collection('chats').doc(chatId).update({
         'unreadCount': unreadCount,
       });
 
@@ -124,7 +131,7 @@ class ChatService {
           .collection('messages')
           .where('senderId', isNotEqualTo: userId)
           .where('isRead', isEqualTo: false)
-          .get();
+          . get();
 
       final batch = _firestore.batch();
       for (var doc in messagesSnapshot.docs) {
@@ -150,10 +157,10 @@ class ChatService {
       for (var doc in messagesSnapshot.docs) {
         batch.delete(doc.reference);
       }
-      await batch. commit();
+      await batch.commit();
 
       // Delete chat room
-      await _firestore.collection('chats').doc(chatId).delete();
+      await _firestore. collection('chats').doc(chatId).delete();
     } catch (e) {
       print('Error deleting chat: $e');
       rethrow;

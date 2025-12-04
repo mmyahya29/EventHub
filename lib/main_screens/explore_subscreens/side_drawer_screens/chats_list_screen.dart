@@ -14,19 +14,19 @@ class ChatsScreen extends ConsumerWidget {
 
     if (difference.inDays == 0) {
       return DateFormat('h:mm a').format(time);
-    } else if (difference.inDays == 1) {
+    } else if (difference. inDays == 1) {
       return 'Yesterday';
     } else if (difference.inDays < 7) {
       return DateFormat('EEEE'). format(time);
     } else {
-      return DateFormat('MMM d').format(time);
+      return DateFormat('MMM d'). format(time);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final chatsAsync = ref.watch(userChatsProvider);
-    final currentUser = ref.watch(authStateProvider).value;
+    final currentUser = ref.watch(authStateProvider). value;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -71,15 +71,20 @@ class ChatsScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final chat = chats[index];
               final otherUserId = chat.participants
-                  .firstWhere((id) => id != currentUser?. uid);
-              final otherUserDetails = chat.participantDetails[otherUserId];
+                  .firstWhere((id) => id != currentUser?.uid, orElse: () => '');
+
+              if (otherUserId. isEmpty) {
+                return const SizedBox. shrink();
+              }
+
+              final otherUserDetails = chat.participantDetails[otherUserId] ??  {};
               final unreadCount = chat.unreadCount[currentUser?.uid] ?? 0;
 
               return _buildChatItem(
                 context,
                 ref,
                 chatId: chat.id,
-                name: otherUserDetails['name'] ?? 'Unknown',
+                name: otherUserDetails['name'] ?? 'Unknown User',
                 lastMessage: chat.lastMessage,
                 time: _formatTime(chat.lastMessageTime),
                 unreadCount: unreadCount,
@@ -91,14 +96,18 @@ class ChatsScreen extends ConsumerWidget {
         loading: () => const Center(
           child: CircularProgressIndicator(color: Color(0xFF5B4EFF)),
         ),
-        error: (error, stack) => Center(
-          child: Text('Error: $error'),
-        ),
+        error: (error, stack) {
+          // Check if it's an index error
+          if (error. toString().contains('index') ||
+              error.toString().contains('FAILED_PRECONDITION')) {
+            return _buildIndexErrorState();
+          }
+          return _buildErrorState(error. toString());
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigate to user selection screen to start a new chat
-          // You'll need to create this screen
+          _showInfoDialog(context);
         },
         backgroundColor: const Color(0xFF5B4EFF),
         child: const Icon(Icons.edit, color: Colors.white),
@@ -150,7 +159,7 @@ class ChatsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment. spaceBetween,
                     children: [
                       Text(
                         name,
@@ -162,7 +171,7 @@ class ChatsScreen extends ConsumerWidget {
                       ),
                       Text(
                         time,
-                        style: TextStyle(fontSize: 12, color: Colors. grey[500]),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],
                   ),
@@ -173,7 +182,7 @@ class ChatsScreen extends ConsumerWidget {
                       Expanded(
                         child: Text(
                           lastMessage. isEmpty ? 'No messages yet' : lastMessage,
-                          style: TextStyle(fontSize: 14, color: Colors. grey[600]),
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -183,14 +192,14 @@ class ChatsScreen extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: const Color(0xFF5B4EFF),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius. circular(10),
                           ),
                           child: Text(
                             unreadCount.toString(),
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Colors. white,
                               fontSize: 12,
-                              fontWeight: FontWeight. w600,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -222,8 +231,141 @@ class ChatsScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Start a conversation',
+            'Start a chat with someone',
             style: TextStyle(fontSize: 14, color: Colors. grey[500]),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Visit an organizer\'s profile and tap\n"Messages" to start chatting',
+            style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIndexErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.warning_amber_rounded, size: 80, color: Colors.orange[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Database Index Required',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'A Firebase index is needed for the chat feature.  Please check the console logs for the index creation link.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Quick Fix:',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors. orange[900],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '1. Check the app console/logs\n2. Find the Firebase index link\n3. Click the link to create the index\n4. Wait a few minutes\n5. Restart the app',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 80, color: Colors.red[300]),
+            const SizedBox(height: 16),
+            Text(
+              'Unable to load chats',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Please check your internet connection and try again.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Error details: ${error.length > 100 ? error.substring(0, 100) + '...' : error}',
+              style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey[500],
+                fontFamily: 'monospace',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Start a New Chat'),
+        content: const Text(
+          'To start a new chat, visit an organizer\'s profile from the Events screen and tap the "Messages" button.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Got it',
+              style: TextStyle(color: Color(0xFF5B4EFF)),
+            ),
           ),
         ],
       ),

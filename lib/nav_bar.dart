@@ -2,9 +2,11 @@ import 'package:event_hub/main_screens/add_events_screens.dart';
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 
+import 'main_screens/explore_subscreens/side_drawer_screens/booked_events.dart';
 import 'main_screens/events_screen.dart';
 import 'main_screens/explore_screen.dart';
 import 'main_screens/profile_screen.dart';
+import 'main_screens/search_screen.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({Key? key}) : super(key: key);
@@ -26,7 +28,7 @@ class _MainNavigationState extends State<MainNavigation> {
     return const [
       ExploreScreen(),
       EventsScreen(),
-      MapScreen(),
+      SearchScreen(),
       ProfileScreen(),
     ];
   }
@@ -50,8 +52,8 @@ class _MainNavigationState extends State<MainNavigation> {
         inactiveColorPrimary: Colors.grey,
       ),
       PersistentBottomNavBarItem(
-        icon: const Icon(Icons.location_on_outlined),
-        title: ("Map"),
+        icon: const Icon(Icons.token_outlined),
+        title: ("Booked Events"),
         activeColorPrimary: activeColor,
         inactiveColorPrimary: Colors.grey,
       ),
@@ -75,19 +77,6 @@ class _MainNavigationState extends State<MainNavigation> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       navBarStyle: NavBarStyle.style9,
       handleAndroidBackButtonPress: true,
-    );
-  }
-}
-
-class MapScreen extends StatelessWidget {
-  const MapScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Text('Map Screen', style: TextStyle(fontSize: 24)),
-      ),
     );
   }
 }

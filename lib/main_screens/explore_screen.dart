@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/events_provider.dart';
 
+import '../widgets/search_bar.dart';
 import 'add_events_screens.dart';
 import 'events_subscreens/event_details_screen.dart';
 import 'explore_subscreens/notifications_screen.dart';
@@ -130,48 +131,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Search Bar
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white. withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.search, color: Colors.white70, size: 20),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: TextField(
-                                    controller: _searchController,
-                                    style: const TextStyle(color: Colors.white),
-                                    decoration: InputDecoration(
-                                      hintText: 'Search.. .',
-                                      hintStyle: TextStyle(
-                                          color: Colors.white. withOpacity(0.7)),
-                                      border: InputBorder.none,
-                                      contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 12),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.tune, color: Colors.white, size: 20),
-                        ),
-                      ],
-                    ),
+                    SearchBarWidget(hintText: 'Search... '),
                   ],
                 ),
               ),

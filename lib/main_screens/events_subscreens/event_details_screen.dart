@@ -1,3 +1,4 @@
+import 'package:event_hub/main_screens/events_subscreens/ticket_booking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -375,6 +376,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
           ],
         ),
         // Floating Buy Ticket Button
+        // Floating Buy Ticket Button
         Positioned(
           bottom: 0,
           left: 0,
@@ -385,7 +387,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black. withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -393,12 +395,18 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
             ),
             child: ElevatedButton(
               onPressed: () {
-                // Buy ticket action
+                // Navigate to booking screen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => BookTicketScreen(event: event),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5B4EFF),
-                foregroundColor: Colors. white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets. symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

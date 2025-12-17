@@ -1,4 +1,5 @@
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/FAQ_screen.dart';
+import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/booked_events.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/chats_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,10 +80,16 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   _buildMenuItem(
-                    icon: Icons.person_outline,
-                    title: 'My Profile',
+                    icon: Icons.token_outlined,
+                    title: 'Booked Tickets',
                     onTap: () {
-                      // Navigate to profile
+                      Navigator.pop(context); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => MyBookingsScreen(),
+                        ),
+                      );
                     },
                   ),
                   _buildMenuItem(

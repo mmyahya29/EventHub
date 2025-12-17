@@ -30,20 +30,50 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  
+  # Maps and Location
   google_maps_flutter: ^2.5.0
   geolocator: ^10.1.0
   permission_handler: ^11.0.1
+  
+  # Navigation
   persistent_bottom_nav_bar: ^6.2.1
-  image_picker: ^0.8.7+4
-
-
-
+  
+  # Image handling
+  image_picker: ^1.0.7
+  
+  # Authentication
+  google_sign_in: ^6.2.1
+  flutter_facebook_auth: ^6.0.4
+  flutter_secure_storage: ^9.0.0
+  
+  # Payment
+  flutter_stripe: ^10.1.1
+  
+  # QR Code
+  qr_flutter: ^4.1.0
+  qr_code_scanner: ^1.0.1
+  
+  # Notifications
+  firebase_messaging: ^14.7.10
+  flutter_local_notifications: ^16.3.2
+  
+  # Sharing
+  share_plus: ^7.2.2
+  
+  # URLs
+  url_launcher: ^6.2.4
+  
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  
+  # Firebase
   firebase_core: ^4.2.1
   firebase_auth: ^6.1.2
   cloud_firestore: ^6.1.0
+  
+  # Utilities
   intl: ^0.20.2
   flutter_riverpod: ^3.0.3
 

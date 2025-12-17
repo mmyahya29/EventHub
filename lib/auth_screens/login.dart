@@ -97,28 +97,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  // Google Sign-In
-  Future<void> _signInWithGoogle() async {
-    final authService = ref.read(authServiceProvider);
-    
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final userCredential = await authService.signInWithGoogle();
-      
-      if (userCredential != null && mounted) {
-        _showSnackBar('Google Sign-In Successful', isError: false);
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSnackBar('Google Sign-In failed: ${e.toString()}', isError: true);
-    }
-  }
-
   // Facebook Sign-In
   Future<void> _signInWithFacebook() async {
     final authService = ref.read(authServiceProvider);
@@ -335,26 +313,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Google Sign In
-              OutlinedButton.icon(
-                onPressed: _isLoading ? null : _signInWithGoogle,
-                icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.black87),
-                label: const Text(
-                  'Login with Google',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey[300]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               // Facebook Sign In
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _signInWithFacebook,

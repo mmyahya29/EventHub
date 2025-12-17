@@ -1,12 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -46,41 +44,6 @@ class AuthService {
     return _auth.currentUser?.emailVerified ?? false;
   }
 
-  // Google Sign-In
-  Future<UserCredential?> signInWithGoogle() async {
-    try {
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      
-      if (googleUser == null) {
-        // User cancelled the sign-in
-        return null;
-      }
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Sign in to Firebase with the Google credential
-      final userCredential = await _auth.signInWithCredential(credential);
-
-      // Create user document if it doesn't exist
-      if (userCredential.user != null) {
-        await _createUserDocumentIfNotExists(userCredential.user!);
-      }
-
-      return userCredential;
-    } catch (e) {
-      print('Error signing in with Google: $e');
-      rethrow;
-    }
-  }
-
   // Facebook Sign-In
   Future<UserCredential?> signInWithFacebook() async {
     try {
@@ -94,7 +57,7 @@ class AuthService {
 
       // Create a credential from the access token
       final OAuthCredential facebookAuthCredential = 
-          FacebookAuthProvider.credential(loginResult.accessToken!.tokenString);
+          FacebookAuthProvider.credential(loginResult.accessToken!.token);
 
       // Sign in to Firebase with the Facebook credential
       final userCredential = await _auth.signInWithCredential(facebookAuthCredential);
@@ -179,7 +142,6 @@ class AuthService {
 
   // Sign out
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
     await FacebookAuth.instance.logOut();
     await _auth.signOut();
   }

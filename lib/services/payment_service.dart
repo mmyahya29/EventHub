@@ -13,18 +13,31 @@ class PaymentService {
     await Stripe.instance.applySettings();
   }
 
-  // Create a payment intent (in a real app, this should be done on the backend)
-  // For demonstration, we'll use test mode
+  // ⚠️ SECURITY WARNING: This method should NEVER be used in production!
+  // Create a payment intent (MUST be done on a secure backend server)
+  // 
+  // PRODUCTION REQUIREMENTS:
+  // 1. Create a backend API endpoint (e.g., Cloud Functions, Express, etc.)
+  // 2. The backend should create the payment intent using Stripe's server-side SDK
+  // 3. Never expose your Stripe secret key in the client app
+  // 4. The client should only receive the client_secret from your backend
+  // 
+  // Example backend implementation (Node.js/Express):
+  // ```javascript
+  // app.post('/create-payment-intent', async (req, res) => {
+  //   const paymentIntent = await stripe.paymentIntents.create({
+  //     amount: req.body.amount,
+  //     currency: req.body.currency,
+  //   });
+  //   res.json({ clientSecret: paymentIntent.client_secret });
+  // });
+  // ```
   Future<Map<String, dynamic>> createPaymentIntent({
     required double amount,
     required String currency,
   }) async {
-    // In production, you should call your backend server to create the payment intent
-    // This is a simplified version for demonstration
-    // IMPORTANT: Never expose your Stripe secret key in the client app
-    
-    // For now, we'll return a mock payment intent
-    // In a real app, you'd make an HTTP request to your backend
+    // TODO: Replace this with actual backend API call
+    // This is a mock implementation for demonstration only
     return {
       'clientSecret': 'test_client_secret',
       'paymentIntentId': 'pi_test_${DateTime.now().millisecondsSinceEpoch}',

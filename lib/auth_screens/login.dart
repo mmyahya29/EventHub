@@ -53,7 +53,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   // Sign in with email and password
   Future<void> _authenticate() async {
-    final auth = ref.read(firebaseAuthProvider);
+    final authService = ref.read(authServiceProvider);
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -72,10 +72,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         _isLoading = true;
       });
 
-      await auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await authService.signInWithEmailPassword(email, password);
+
+      // Save credentials if Remember Me is checked
+      if (_rememberMe) {
+        await authService.saveCredentials(email, password);
+      }
 
       if (mounted) {
         _showSnackBar('Login Successful', isError: false);
@@ -92,6 +94,50 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         _isLoading = false;
       });
       _showSnackBar('An unexpected error occurred', isError: true);
+    }
+  }
+
+  // Google Sign-In
+  Future<void> _signInWithGoogle() async {
+    final authService = ref.read(authServiceProvider);
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final userCredential = await authService.signInWithGoogle();
+      
+      if (userCredential != null && mounted) {
+        _showSnackBar('Google Sign-In Successful', isError: false);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Google Sign-In failed: ${e.toString()}', isError: true);
+    }
+  }
+
+  // Facebook Sign-In
+  Future<void> _signInWithFacebook() async {
+    final authService = ref.read(authServiceProvider);
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final userCredential = await authService.signInWithFacebook();
+      
+      if (userCredential != null && mounted) {
+        _showSnackBar('Facebook Sign-In Successful', isError: false);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Facebook Sign-In failed: ${e.toString()}', isError: true);
     }
   }
 
@@ -291,9 +337,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: 24),
               // Google Sign In
               OutlinedButton.icon(
-                onPressed: () {
-                  _showSnackBar('Google Sign-In coming soon!', isError: false);
-                },
+                onPressed: _isLoading ? null : _signInWithGoogle,
                 icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.black87),
                 label: const Text(
                   'Login with Google',
@@ -313,9 +357,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               const SizedBox(height: 16),
               // Facebook Sign In
               OutlinedButton.icon(
-                onPressed: () {
-                  _showSnackBar('Facebook Sign-In coming soon!', isError: false);
-                },
+                onPressed: _isLoading ? null : _signInWithFacebook,
                 icon: const Icon(Icons.facebook, color: Colors.blue),
                 label: const Text(
                   'Login with Facebook',

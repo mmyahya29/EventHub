@@ -43,19 +43,15 @@ dependencies:
   image_picker: ^1.0.7
   
   # Authentication
-  google_sign_in: ^6.2.1
   flutter_facebook_auth: ^6.0.4
   flutter_secure_storage: ^9.0.0
   
-  # Payment
-  flutter_stripe: ^10.1.1
-  
   # QR Code
   qr_flutter: ^4.1.0
-  qr_code_scanner: ^1.0.1
+  mobile_scanner: ^3.5.2
   
   # Notifications
-  firebase_messaging: ^14.7.10
+  firebase_messaging: ^16.0.4
   flutter_local_notifications: ^16.3.2
   
   # Sharing

@@ -147,28 +147,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     }
   }
 
-  // Google Sign-In
-  Future<void> _signInWithGoogle() async {
-    final authService = ref.read(authServiceProvider);
-    
-    try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      final userCredential = await authService.signInWithGoogle();
-      
-      if (userCredential != null && mounted) {
-        _showSnackBar('Google Sign-Up Successful', isError: false);
-      }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSnackBar('Google Sign-Up failed: ${e.toString()}', isError: true);
-    }
-  }
-
   // Facebook Sign-In
   Future<void> _signInWithFacebook() async {
     final authService = ref.read(authServiceProvider);
@@ -415,26 +393,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 ],
               ),
               const SizedBox(height: 24),
-              // Google Sign Up
-              OutlinedButton.icon(
-                onPressed: _isLoading ? null : _signInWithGoogle,
-                icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.black87),
-                label: const Text(
-                  'Sign up with Google',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey[300]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
               // Facebook Sign Up
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _signInWithFacebook,

@@ -16,6 +16,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Try auto-login if Remember Me was enabled
+  // This will be handled by the AuthService
+  // The authStateProvider will automatically update if login succeeds
+
   runApp(
     const ProviderScope(
       child: MyApp(),

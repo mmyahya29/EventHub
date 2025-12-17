@@ -53,7 +53,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   // Sign up with email and password
   Future<void> _signup() async {
-    final auth = ref.read(firebaseAuthProvider);
+    final authService = ref.read(authServiceProvider);
     final firestore = ref.read(firestoreProvider);
 
     final name = _nameController.text.trim();
@@ -93,10 +93,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
       });
 
       // Create user account
-      final userCredential = await auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      final userCredential = await authService.signUpWithEmailPassword(email, password);
 
       final user = userCredential.user;
 
@@ -109,31 +106,31 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         await firestore.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'name': name,
+          'displayName': name,
           'email': email,
           'createdAt': FieldValue.serverTimestamp(),
-          'following': 0,
-          'followers': 0,
+          'followingCount': 0,
+          'followerCount': 0,
           'bio': 'Enjoy your favorite dishe and a lovely your friends and family and have a great time. Food from local food trucks will be available for purchase.',
           'interests': ['Gaming', 'Clubbing', 'Concerts', 'Music', 'Theater', 'Art'],
         });
+
+        // Send email verification
+        await authService.sendEmailVerification();
 
         if (mounted) {
           setState(() {
             _isLoading = false;
           });
-          _showSnackBar('Account Created Successfully', isError: false);
+          _showSnackBar('Account Created! Please check your email for verification.', isError: false);
 
-          // Navigate to verification screen (optional - you can skip this if not needed)
-          // Or the app will automatically navigate to MainNavigation via authStateProvider
-          // Uncomment below if you want to show verification screen first
-          /*
+          // Navigate to verification screen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => const VerificationScreen(),
             ),
           );
-          */
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -147,6 +144,50 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         _isLoading = false;
       });
       _showSnackBar('An unexpected error occurred', isError: true);
+    }
+  }
+
+  // Google Sign-In
+  Future<void> _signInWithGoogle() async {
+    final authService = ref.read(authServiceProvider);
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final userCredential = await authService.signInWithGoogle();
+      
+      if (userCredential != null && mounted) {
+        _showSnackBar('Google Sign-Up Successful', isError: false);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Google Sign-Up failed: ${e.toString()}', isError: true);
+    }
+  }
+
+  // Facebook Sign-In
+  Future<void> _signInWithFacebook() async {
+    final authService = ref.read(authServiceProvider);
+    
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final userCredential = await authService.signInWithFacebook();
+      
+      if (userCredential != null && mounted) {
+        _showSnackBar('Facebook Sign-Up Successful', isError: false);
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      _showSnackBar('Facebook Sign-Up failed: ${e.toString()}', isError: true);
     }
   }
 
@@ -376,12 +417,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               const SizedBox(height: 24),
               // Google Sign Up
               OutlinedButton.icon(
-                onPressed: () {
-                  _showSnackBar('Google Sign-Up coming soon!', isError: false);
-                },
+                onPressed: _isLoading ? null : _signInWithGoogle,
                 icon: const Icon(Icons.g_mobiledata, size: 28, color: Colors.black87),
                 label: const Text(
-                  'Login with Google',
+                  'Sign up with Google',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 16,
@@ -398,12 +437,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
               const SizedBox(height: 16),
               // Facebook Sign Up
               OutlinedButton.icon(
-                onPressed: () {
-                  _showSnackBar('Facebook Sign-Up coming soon!', isError: false);
-                },
+                onPressed: _isLoading ? null : _signInWithFacebook,
                 icon: const Icon(Icons.facebook, color: Colors.blue),
                 label: const Text(
-                  'Login with Facebook',
+                  'Sign up with Facebook',
                   style: TextStyle(
                     color: Colors.black87,
                     fontSize: 16,

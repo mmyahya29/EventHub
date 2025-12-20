@@ -7,7 +7,7 @@ import 'auth_screens/login.dart';
 import 'nav_bar.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
-import 'services/notification_service.dart';
+import 'providers/notification_provider.dart';
 
 
 void main() async {
@@ -18,20 +18,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Firebase Cloud Messaging
-  try {
-    final notificationService = NotificationService();
-    await notificationService.initialize();
-    print('✅ FCM initialized successfully');
-  } catch (e) {
-    print('⚠️ FCM initialization failed: $e');
-    // Continue app execution even if FCM fails
-  }
-
-  // Try auto-login if Remember Me was enabled
-  // This will be handled by the AuthService
-  // The authStateProvider will automatically update if login succeeds
-
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -39,8 +25,33 @@ void main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
+
+  @override
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Firebase Cloud Messaging after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeFCM();
+    });
+  }
+
+  Future<void> _initializeFCM() async {
+    try {
+      final notificationService = ref.read(notificationServiceProvider);
+      await notificationService.initialize();
+      print('✅ FCM initialized successfully');
+    } catch (e) {
+      print('⚠️ FCM initialization failed: $e');
+      // Continue app execution even if FCM fails
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

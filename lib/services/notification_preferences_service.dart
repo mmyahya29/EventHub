@@ -3,6 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class NotificationPreferencesService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
+  // Default notification preferences
+  static const Map<String, bool> _defaultPreferences = {
+    'pushNotifications': true,
+    'eventNotifications': true,
+    'socialNotifications': true,
+    'bookingNotifications': true,
+    'messageNotifications': true,
+  };
+  
   // Save notification preferences to Firestore
   Future<void> savePreferences(String userId, Map<String, bool> prefs) async {
     try {
@@ -30,13 +39,7 @@ class NotificationPreferencesService {
         .map((doc) {
       if (!doc.exists) {
         // Return default preferences if none exist
-        return {
-          'pushNotifications': true,
-          'eventNotifications': true,
-          'socialNotifications': true,
-          'bookingNotifications': true,
-          'messageNotifications': true,
-        };
+        return Map<String, bool>.from(_defaultPreferences);
       }
       
       final data = doc.data() as Map<String, dynamic>;
@@ -62,13 +65,7 @@ class NotificationPreferencesService {
       
       if (!doc.exists) {
         // Return default preferences if none exist
-        return {
-          'pushNotifications': true,
-          'eventNotifications': true,
-          'socialNotifications': true,
-          'bookingNotifications': true,
-          'messageNotifications': true,
-        };
+        return Map<String, bool>.from(_defaultPreferences);
       }
       
       final data = doc.data() as Map<String, dynamic>;
@@ -82,13 +79,7 @@ class NotificationPreferencesService {
     } catch (e) {
       print('❌ Error getting notification preferences: $e');
       // Return defaults on error
-      return {
-        'pushNotifications': true,
-        'eventNotifications': true,
-        'socialNotifications': true,
-        'bookingNotifications': true,
-        'messageNotifications': true,
-      };
+      return Map<String, bool>.from(_defaultPreferences);
     }
   }
 }

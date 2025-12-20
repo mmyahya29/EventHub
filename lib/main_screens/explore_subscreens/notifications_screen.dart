@@ -321,28 +321,32 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                 Navigator.pop(context);
                 
                 try {
-                  final notificationsAsync = ref.read(userNotificationsProvider(userId));
-                  final notifications = notificationsAsync.value ?? [];
+                  // Get notifications using watch to ensure we have the latest data
+                  final notificationsAsync = await ref.read(userNotificationsProvider(userId).future);
                   
-                  for (var notification in notifications) {
+                  for (var notification in notificationsAsync) {
                     if (!notification.isRead) {
                       await notificationService.markAsRead(notification.id);
                     }
                   }
                   
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('All notifications marked as read'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('All notifications marked as read'),
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
             ),
@@ -376,28 +380,32 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                   ),
                 );
                 
-                if (confirm == true) {
+                if (confirm == true && mounted) {
                   try {
-                    final notificationsAsync = ref.read(userNotificationsProvider(userId));
-                    final notifications = notificationsAsync.value ?? [];
+                    // Get notifications using watch to ensure we have the latest data
+                    final notificationsAsync = await ref.read(userNotificationsProvider(userId).future);
                     
-                    for (var notification in notifications) {
+                    for (var notification in notificationsAsync) {
                       await notificationService.deleteNotification(notification.id);
                     }
                     
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('All notifications cleared'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('All notifications cleared'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
                   }
                 }
               },

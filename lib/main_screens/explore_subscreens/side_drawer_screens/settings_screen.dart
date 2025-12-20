@@ -25,7 +25,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPreferences();
+    // Use addPostFrameCallback to ensure the widget is mounted before reading
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadPreferences();
+      }
+    });
   }
   
   Future<void> _loadPreferences() async {
@@ -33,16 +38,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (user != null) {
       try {
         final prefs = await _prefsService.getPreferencesOnce(user.uid);
-        setState(() {
-          _notificationsEnabled = prefs['pushNotifications'] ?? true;
-          _eventNotifications = prefs['eventNotifications'] ?? true;
-          _socialNotifications = prefs['socialNotifications'] ?? true;
-          _bookingNotifications = prefs['bookingNotifications'] ?? true;
-          _messageNotifications = prefs['messageNotifications'] ?? true;
-          _isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            _notificationsEnabled = prefs['pushNotifications'] ?? true;
+            _eventNotifications = prefs['eventNotifications'] ?? true;
+            _socialNotifications = prefs['socialNotifications'] ?? true;
+            _bookingNotifications = prefs['bookingNotifications'] ?? true;
+            _messageNotifications = prefs['messageNotifications'] ?? true;
+            _isLoading = false;
+          });
+        }
       } catch (e) {
         print('Error loading preferences: $e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
         setState(() {
           _isLoading = false;
         });

@@ -7,9 +7,9 @@ class EventService {
   final NotificationService _notificationService = NotificationService();
 
   // Add a single event
-  Future<void> addEvent(Map<String, dynamic> eventData) async {
+  Future<String> addEvent(Map<String, dynamic> eventData) async {
     try {
-      await _firestore.collection('events').add(eventData);
+      final docRef = await _firestore.collection('events').add(eventData);
       print('✅ Event added successfully!');
       
       // Send notifications to followers about new event
@@ -18,13 +18,15 @@ class EventService {
           await _sendNewEventNotifications(
             organizerId: eventData['organizerId'],
             eventTitle: eventData['title'] ?? 'New Event',
-            eventId: '', // Will be updated if needed
+            eventId: docRef.id, // Use the actual document ID
           );
         } catch (e) {
           print('⚠️ Error sending new event notifications: $e');
           // Don't fail event creation if notification fails
         }
       }
+      
+      return docRef.id;
     } catch (e) {
       print('❌ Error adding event: $e');
       rethrow;

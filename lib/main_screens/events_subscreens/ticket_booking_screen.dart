@@ -102,7 +102,6 @@ class _BookTicketScreenState extends ConsumerState<BookTicketScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context); // Close dialog
-              Navigator.pop(context); // Go back to event details
             },
             child: const Text('OK', style: TextStyle(color: Color(0xFF5B4EFF))),
           ),

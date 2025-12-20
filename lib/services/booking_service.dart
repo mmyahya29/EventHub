@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/booking_model.dart';
+import 'notification_service.dart';
 
 class BookingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
 
   // Create a new booking under user's bookings subcollection
   Future<String> createBooking(Booking booking) async {
@@ -15,6 +17,19 @@ class BookingService {
           .add(booking.toMap());
 
       print('✅ Booking created successfully for user ${booking.userId}: ${docRef.id}');
+      
+      // Send booking confirmation notification
+      try {
+        await _notificationService.sendBookingConfirmation(
+          userId: booking.userId,
+          eventTitle: booking.eventTitle,
+          bookingId: docRef.id,
+        );
+      } catch (e) {
+        print('⚠️ Error sending booking notification: $e');
+        // Don't fail the booking if notification fails
+      }
+      
       return docRef.id;
     } catch (e) {
       print('❌ Error creating booking: $e');

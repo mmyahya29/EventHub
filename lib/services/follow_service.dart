@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notification_service.dart';
 
 class FollowService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
 
   // Follow a user
   Future<void> followUser({
@@ -47,6 +49,22 @@ class FollowService {
 
       await batch.commit();
       print('✅ Successfully followed user');
+      
+      // Send follower notification
+      try {
+        // Get current user's display name
+        final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
+        final currentUserName = currentUserDoc.data()?['displayName'] ?? 'Someone';
+        
+        await _notificationService.sendFollowerNotification(
+          userId: targetUserId,
+          followerName: currentUserName,
+          followerId: currentUserId,
+        );
+      } catch (e) {
+        print('⚠️ Error sending follower notification: $e');
+        // Don't fail the follow action if notification fails
+      }
     } catch (e) {
       print('❌ Error following user: $e');
       rethrow;

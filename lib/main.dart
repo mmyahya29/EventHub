@@ -6,6 +6,8 @@ import 'firebase_options.dart';
 import 'auth_screens/login.dart';
 import 'nav_bar.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/notification_provider.dart';
 
 
 void main() async {
@@ -16,10 +18,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Try auto-login if Remember Me was enabled
-  // This will be handled by the AuthService
-  // The authStateProvider will automatically update if login succeeds
-
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -27,20 +25,89 @@ void main() async {
   );
 }
 
-class MyApp extends ConsumerWidget {
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
+
+  @override
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Firebase Cloud Messaging after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeFCM();
+    });
+  }
+
+  Future<void> _initializeFCM() async {
+    try {
+      final notificationService = ref.read(notificationServiceProvider);
+      await notificationService.initialize();
+      print('✅ FCM initialized successfully');
+    } catch (e) {
+      print('⚠️ FCM initialization failed: $e');
+      // Continue app execution even if FCM fails
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
     final authState = ref.watch(authStateProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       title: 'EventHub',
       debugShowCheckedModeBanner: false,
+      themeMode: themeMode,
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFF5B4EFF),
         useMaterial3: true,
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Colors.white,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.black87),
+          titleTextStyle: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        colorScheme: ColorScheme.light(
+          primary: const Color(0xFF5B4EFF),
+          secondary: const Color(0xFF00D9A5),
+          surface: Colors.white,
+          error: const Color(0xFFFF6B6B),
+        ),
+      ),
+      darkTheme: ThemeData(
+        primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFF5B4EFF),
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFF5B4EFF),
+          secondary: const Color(0xFF00D9A5),
+          surface: const Color(0xFF1E1E1E),
+          error: const Color(0xFFFF6B6B),
+        ),
       ),
       home: authState.when(
         data: (user) {

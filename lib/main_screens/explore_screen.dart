@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/events_provider.dart';
+import '../providers/notification_provider.dart';
+import '../providers/auth_provider.dart';
 
 import '../widgets/search_bar.dart';
 import 'add_events_screens.dart';
@@ -39,6 +41,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     final selectedCategory = ref.watch(selectedCategoryProvider);
     final upcomingEventsAsync = ref.watch(upcomingEventsProvider);
     final nearbyEventsAsync = ref.watch(nearbyEventsProvider);
+    final user = ref.watch(authStateProvider).value;
 
     return Scaffold(
       key: _scaffoldKey,
@@ -113,18 +116,46 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                                 );
                               },
                             ),
-                            Positioned(
-                              right: 12,
-                              top: 12,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
+                            // Show badge if unread notifications exist
+                            if (user != null)
+                              Consumer(
+                                builder: (context, ref, child) {
+                                  final notificationsAsync = ref.watch(userNotificationsProvider(user.uid));
+                                  return notificationsAsync.when(
+                                    data: (notifications) {
+                                      final unreadCount = notifications.where((n) => !n.isRead).length;
+                                      if (unreadCount == 0) return const SizedBox.shrink();
+                                      
+                                      return Positioned(
+                                        right: 8,
+                                        top: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 16,
+                                            minHeight: 16,
+                                          ),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            unreadCount > 99 ? '99+' : '$unreadCount',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    loading: () => const SizedBox.shrink(),
+                                    error: (_, __) => const SizedBox.shrink(),
+                                  );
+                                },
                               ),
-                            ),
                           ],
                         ),
                       ],

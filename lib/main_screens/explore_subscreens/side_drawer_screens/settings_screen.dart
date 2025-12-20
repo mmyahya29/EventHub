@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/theme_provider.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/notification_preferences_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -11,27 +13,113 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  final NotificationPreferencesService _prefsService = NotificationPreferencesService();
+  
   bool _notificationsEnabled = true;
   bool _eventNotifications = true;
   bool _socialNotifications = true;
   bool _bookingNotifications = true;
+  bool _messageNotifications = true;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Use addPostFrameCallback to ensure the widget is mounted before reading
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadPreferences();
+      }
+    });
+  }
+  
+  Future<void> _loadPreferences() async {
+    final user = ref.read(authStateProvider).value;
+    if (user != null) {
+      try {
+        final prefs = await _prefsService.getPreferencesOnce(user.uid);
+        if (mounted) {
+          setState(() {
+            _notificationsEnabled = prefs['pushNotifications'] ?? true;
+            _eventNotifications = prefs['eventNotifications'] ?? true;
+            _socialNotifications = prefs['socialNotifications'] ?? true;
+            _bookingNotifications = prefs['bookingNotifications'] ?? true;
+            _messageNotifications = prefs['messageNotifications'] ?? true;
+            _isLoading = false;
+          });
+        }
+      } catch (e) {
+        print('Error loading preferences: $e');
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+  
+  Future<void> _savePreferences() async {
+    final user = ref.read(authStateProvider).value;
+    if (user != null) {
+      try {
+        await _prefsService.savePreferences(user.uid, {
+          'pushNotifications': _notificationsEnabled,
+          'eventNotifications': _eventNotifications,
+          'socialNotifications': _socialNotifications,
+          'bookingNotifications': _bookingNotifications,
+          'messageNotifications': _messageNotifications,
+        });
+      } catch (e) {
+        print('Error saving preferences: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving preferences: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
+    final themeMode = ref.watch(themeModeProvider);
+    final isDarkMode = themeMode == ThemeMode.dark || 
+      (themeMode == ThemeMode.system && MediaQuery.of(context).platformBrightness == Brightness.dark);
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Settings'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(
+            color: Color(0xFF5B4EFF),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Settings',
           style: TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).appBarTheme.titleTextStyle?.color,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        iconTheme: Theme.of(context).appBarTheme.iconTheme,
       ),
       body: ListView(
         children: [
@@ -58,6 +146,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
+          // Appearance Section
+          _buildSectionHeader('Appearance'),
+          SwitchListTile(
+            secondary: const Icon(Icons.dark_mode_outlined),
+            title: const Text('Dark Mode'),
+            subtitle: Text(isDarkMode ? 'Dark theme enabled' : 'Light theme enabled'),
+            value: isDarkMode,
+            activeColor: const Color(0xFF5B4EFF),
+            onChanged: (value) async {
+              await ref.read(themeModeProvider.notifier).toggleDarkMode();
+            },
+          ),
+          const Divider(),
+
           // Notifications Section
           _buildSectionHeader('Notifications'),
           SwitchListTile(
@@ -70,6 +172,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               setState(() {
                 _notificationsEnabled = value;
               });
+              _savePreferences();
             },
           ),
           if (_notificationsEnabled) ...[
@@ -81,6 +184,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 setState(() {
                   _eventNotifications = value;
                 });
+                _savePreferences();
               },
             ),
             _buildSubSwitchTile(
@@ -91,6 +195,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 setState(() {
                   _socialNotifications = value;
                 });
+                _savePreferences();
               },
             ),
             _buildSubSwitchTile(
@@ -101,6 +206,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 setState(() {
                   _bookingNotifications = value;
                 });
+                _savePreferences();
+              },
+            ),
+            _buildSubSwitchTile(
+              title: 'Message Notifications',
+              subtitle: 'New messages and chat updates',
+              value: _messageNotifications,
+              onChanged: (value) {
+                setState(() {
+                  _messageNotifications = value;
+                });
+                _savePreferences();
               },
             ),
           ],

@@ -1,15 +1,77 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'notification_service.dart';
+import '../models/notification_model.dart';
 
 class EventService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService = NotificationService();
 
   // Add a single event
   Future<void> addEvent(Map<String, dynamic> eventData) async {
     try {
       await _firestore.collection('events').add(eventData);
       print('✅ Event added successfully!');
+      
+      // Send notifications to followers about new event
+      if (eventData['organizerId'] != null) {
+        try {
+          await _sendNewEventNotifications(
+            organizerId: eventData['organizerId'],
+            eventTitle: eventData['title'] ?? 'New Event',
+            eventId: '', // Will be updated if needed
+          );
+        } catch (e) {
+          print('⚠️ Error sending new event notifications: $e');
+          // Don't fail event creation if notification fails
+        }
+      }
     } catch (e) {
       print('❌ Error adding event: $e');
+      rethrow;
+    }
+  }
+  
+  // Send notifications to followers about new event
+  Future<void> _sendNewEventNotifications({
+    required String organizerId,
+    required String eventTitle,
+    required String eventId,
+  }) async {
+    try {
+      // Get organizer's followers
+      final followersSnapshot = await _firestore
+          .collection('users')
+          .doc(organizerId)
+          .collection('followers')
+          .get();
+      
+      // Get organizer name
+      final organizerDoc = await _firestore.collection('users').doc(organizerId).get();
+      final organizerName = organizerDoc.data()?['displayName'] ?? 'An organizer';
+      
+      // Send notification to each follower
+      for (var followerDoc in followersSnapshot.docs) {
+        final followerId = followerDoc.data()['userId'];
+        if (followerId != null) {
+          await _notificationService.createNotification(
+            NotificationModel(
+              id: '',
+              userId: followerId,
+              type: 'new_event',
+              title: 'New Event',
+              message: '$organizerName created a new event: $eventTitle',
+              createdAt: DateTime.now(),
+              isRead: false,
+              data: {
+                'eventId': eventId,
+                'organizerId': organizerId,
+              },
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('❌ Error sending new event notifications: $e');
       rethrow;
     }
   }

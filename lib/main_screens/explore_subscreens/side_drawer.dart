@@ -1,6 +1,7 @@
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/FAQ_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/booked_events.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/chats_list_screen.dart';
+import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -130,7 +131,13 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     icon: Icons.settings_outlined,
                     title: 'Settings',
                     onTap: () {
-                      // Navigate to settings
+                      Navigator.pop(context); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
                     },
                   ),
                   _buildMenuItem(

@@ -9,7 +9,6 @@ import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/notification_provider.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -36,7 +35,6 @@ class _MyAppState extends ConsumerState<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Initialize Firebase Cloud Messaging after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeFCM();
     });
@@ -49,84 +47,93 @@ class _MyAppState extends ConsumerState<MyApp> {
       print('✅ FCM initialized successfully');
     } catch (e) {
       print('⚠️ FCM initialization failed: $e');
-      // Continue app execution even if FCM fails
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-
+  Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
-    final themeMode = ref.watch(themeModeProvider);
 
-    return MaterialApp(
-      title: 'EventHub',
-      debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF5B4EFF),
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          iconTheme: IconThemeData(color: Colors.black87),
-          titleTextStyle: TextStyle(
-            color: Colors.black87,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        colorScheme: ColorScheme.light(
-          primary: const Color(0xFF5B4EFF),
-          secondary: const Color(0xFF00D9A5),
-          surface: Colors.white,
-          error: const Color(0xFFFF6B6B),
-        ),
-      ),
-      darkTheme: ThemeData(
-        primarySwatch: Colors.blue,
-        primaryColor: const Color(0xFF5B4EFF),
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E1E1E),
-          elevation: 0,
-          iconTheme: IconThemeData(color: Colors.white),
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        colorScheme: ColorScheme.dark(
-          primary: const Color(0xFF5B4EFF),
-          secondary: const Color(0xFF00D9A5),
-          surface: const Color(0xFF1E1E1E),
-          error: const Color(0xFFFF6B6B),
-        ),
-      ),
-      home: authState.when(
-        data: (user) {
-          // If user is logged in, show main navigation
-          // Otherwise show login screen
-          return user != null ? const MainNavigation() : const SignInScreen();
-        },
-        loading: () => const Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFF5B4EFF),
+    // 1. Watch the AsyncNotifier version of the theme
+    final themeModeAsync = ref.watch(themeModeProvider);
+
+    // 2. Use .when to handle the loading state of the theme
+    return themeModeAsync.when(
+      data: (themeMode) => MaterialApp(
+        title: 'EventHub',
+        debugShowCheckedModeBanner: false,
+        themeMode: themeMode, // Now safely passes ThemeMode
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+          primaryColor: const Color(0xFF5B4EFF),
+          useMaterial3: true,
+          brightness: Brightness.light,
+          scaffoldBackgroundColor: Colors.white,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.black87),
+            titleTextStyle: TextStyle(
+              color: Colors.black87,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ),
-        error: (error, stackTrace) => Scaffold(
-          body: Center(
-            child: Text('Error: $error'),
+          colorScheme: const ColorScheme.light(
+            primary: Color(0xFF5B4EFF),
+            secondary: Color(0xFF00D9A5),
+            surface: Colors.white,
+            error: Color(0xFFFF6B6B),
           ),
         ),
+        darkTheme: ThemeData(
+          primarySwatch: Colors.blue,
+          primaryColor: const Color(0xFF5B4EFF),
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF121212),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF1E1E1E),
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.white),
+            titleTextStyle: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          colorScheme: const ColorScheme.dark(
+            primary: Color(0xFF5B4EFF),
+            secondary: Color(0xFF00D9A5),
+            surface: Color(0xFF1E1E1E),
+            error: Color(0xFFFF6B6B),
+          ),
+        ),
+        home: authState.when(
+          data: (user) => user != null ? const MainNavigation() : const SignInScreen(),
+          loading: () => const LoadingWidget(),
+          error: (error, _) => ErrorWidget(error),
+        ),
+      ),
+      // 3. Fallback UI while SharedPreferences is reading the theme
+      loading: () => const MaterialApp(
+        home: LoadingWidget(),
+      ),
+      error: (error, _) => MaterialApp(
+        home: Scaffold(body: Center(child: Text('Theme Error: $error'))),
+      ),
+    );
+  }
+}
+
+// Simple internal helper for the loading state
+class LoadingWidget extends StatelessWidget {
+  const LoadingWidget({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(color: Color(0xFF5B4EFF)),
       ),
     );
   }

@@ -2,80 +2,58 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Theme mode provider (light/dark/system)
-final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+// 1. Change to AsyncNotifierProvider
+final themeModeProvider = AsyncNotifierProvider<ThemeModeNotifier, ThemeMode>(() {
   return ThemeModeNotifier();
 });
 
-class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+class ThemeModeNotifier extends AsyncNotifier<ThemeMode> {
   static const String _key = 'theme_mode';
-  
-  ThemeModeNotifier() : super(ThemeMode.system) {
-    _loadThemeMode();
+
+  // 2. The build method replaces the constructor for initialization
+  @override
+  Future<ThemeMode> build() async {
+    return _loadThemeMode();
   }
-  
-  // Load theme mode from SharedPreferences
-  Future<void> _loadThemeMode() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final themeModeString = prefs.getString(_key);
-      
-      if (themeModeString != null) {
-        switch (themeModeString) {
-          case 'light':
-            state = ThemeMode.light;
-            break;
-          case 'dark':
-            state = ThemeMode.dark;
-            break;
-          case 'system':
-            state = ThemeMode.system;
-            break;
-        }
-      }
-    } catch (e) {
-      print('❌ Error loading theme mode: $e');
+
+  Future<ThemeMode> _loadThemeMode() async {
+    final prefs = await SharedPreferences.getInstance();
+    final themeModeString = prefs.getString(_key);
+
+    switch (themeModeString) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      case 'system':
+      default:
+        return ThemeMode.system;
     }
   }
-  
-  // Set theme mode and persist to SharedPreferences
+
+  // 3. Update state using AsyncValue.guard to handle errors automatically
   Future<void> setThemeMode(ThemeMode mode) async {
-    state = mode;
-    
-    try {
+    state = const AsyncLoading(); // Optional: show loading state during save
+    state = await AsyncValue.guard(() async {
       final prefs = await SharedPreferences.getInstance();
-      String themeModeString;
-      
-      switch (mode) {
-        case ThemeMode.light:
-          themeModeString = 'light';
-          break;
-        case ThemeMode.dark:
-          themeModeString = 'dark';
-          break;
-        case ThemeMode.system:
-          themeModeString = 'system';
-          break;
-      }
-      
-      await prefs.setString(_key, themeModeString);
-      print('✅ Theme mode saved: $themeModeString');
-    } catch (e) {
-      print('❌ Error saving theme mode: $e');
-    }
+      await prefs.setString(_key, mode.name); // Using .name for cleaner code
+      return mode;
+    });
   }
-  
-  // Toggle between light and dark mode
+
   Future<void> toggleDarkMode() async {
-    final newMode = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    // We use .value to get the current data safely
+    final currentMode = state.value ?? ThemeMode.system;
+    final newMode = currentMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     await setThemeMode(newMode);
   }
-  
-  // Check if dark mode is active
+
+  // Helper for UI logic
   bool isDarkMode(BuildContext context) {
-    if (state == ThemeMode.system) {
+    final currentMode = state.value ?? ThemeMode.system;
+    if (currentMode == ThemeMode.system) {
       return MediaQuery.of(context).platformBrightness == Brightness.dark;
     }
-    return state == ThemeMode.dark;
+    return currentMode == ThemeMode.dark;
   }
 }

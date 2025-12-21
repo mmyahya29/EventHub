@@ -271,7 +271,7 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                               width: 32,
                               height: 32,
                               decoration: BoxDecoration(
-                                color: Colors.grey[300],
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -291,7 +291,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -476,7 +475,6 @@ class _EventDetailsScreenState extends ConsumerState<EventDetailsScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
                   ),
                 ),
                 const SizedBox(height: 4),

@@ -211,7 +211,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
         title,
         style: TextStyle(
           fontSize: 16,
-          color: textColor,
+          color: textColor ?? Theme.of(context).colorScheme.onSurface,
           fontWeight: FontWeight.w500,
         ),
       ),

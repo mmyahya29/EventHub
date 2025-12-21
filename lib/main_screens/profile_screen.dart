@@ -205,6 +205,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     fontSize: 14,
                     height: 1.6,
                     fontStyle: bio.isEmpty ? FontStyle.italic : FontStyle.normal,
+                    color: bio.isEmpty ? Theme.of(context).colorScheme.onSurfaceVariant : null,
                   ),
                 ),
               ],
@@ -244,6 +245,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
                     fontStyle: FontStyle.italic,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 )
                     : Wrap(

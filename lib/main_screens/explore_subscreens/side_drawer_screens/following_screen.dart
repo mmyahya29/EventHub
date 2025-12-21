@@ -22,13 +22,10 @@ class FollowingScreen extends ConsumerWidget {
         title: Text(
           '$userName\'s Following',
           style: const TextStyle(
-            color: Colors.black87,
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: followingAsync.when(
         data: (following) {
@@ -40,14 +37,13 @@ class FollowingScreen extends ConsumerWidget {
                   Icon(
                     Icons.people_outline,
                     size: 80,
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Not Following Anyone Yet',
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontSize: 18,
-                      color: Colors.grey[600],
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -78,7 +74,7 @@ class FollowingScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(
                 'Error loading following',
-                style: TextStyle(color: Colors.red[400]),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
           ),
@@ -103,12 +99,12 @@ class FollowingScreen extends ConsumerWidget {
             // User Avatar
             CircleAvatar(
               radius: 30,
-              backgroundColor: Colors.grey[300],
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               backgroundImage: user['photoURL'] != null && user['photoURL'].isNotEmpty
                   ? NetworkImage(user['photoURL'])
                   : null,
               child: user['photoURL'] == null || user['photoURL'].isEmpty
-                  ? const Icon(Icons.person, size: 30, color: Colors.grey)
+                  ? Icon(Icons.person, size: 30, color: Theme.of(context).colorScheme.onSurfaceVariant)
                   : null,
             ),
             const SizedBox(width: 12),
@@ -127,8 +123,7 @@ class FollowingScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Following',
-                    style: TextStyle(
-                      color: Colors.grey[600],
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 12,
                     ),
                   ),

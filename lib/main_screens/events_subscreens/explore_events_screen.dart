@@ -40,7 +40,6 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
     final eventsAsync = ref.watch(eventsByCategoryProvider(selectedCategory));
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: _isSearching ? _buildSearchAppBar() : _buildNormalAppBar(),
       body: Column(
         children: [
@@ -59,22 +58,21 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(color: Colors.grey[300]!),
+                          border: Border.all(color: Theme.of(context).dividerColor),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.search,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                               size: 20,
                             ),
                             const SizedBox(width: 8),
                             Text(
                               'Search.. .',
-                              style: TextStyle(
-                                color: Colors.grey[600],
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontSize: 14,
                               ),
                             ),
@@ -87,11 +85,11 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
+                      border: Border.all(color: Theme.of(context).dividerColor),
                     ),
-                    child: Icon(Icons.tune, color: Colors.grey[700], size: 20),
+                    child: Icon(Icons.tune, color: Theme.of(context).colorScheme.onSurface, size: 20),
                   ),
                 ],
               ),
@@ -131,14 +129,13 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                         Icon(
                           Icons.event_busy,
                           size: 64,
-                          color: Colors.grey[400],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'No events found',
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontSize: 18,
-                            color: Colors.grey[600],
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -147,9 +144,8 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                           _isSearching
                               ? 'Try a different search'
                               : 'Try a different filter',
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontSize: 14,
-                            color: Colors.grey[500],
                           ),
                         ),
                       ],
@@ -217,14 +213,14 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
               margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFF5B4EFF) : Colors.grey[100],
+                color: isSelected ? const Color(0xFF5B4EFF) : Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Center(
                 child: Text(
                   category,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.grey[700],
+                    color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -239,10 +235,9 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
 
   PreferredSizeWidget _buildNormalAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        icon: const Icon(Icons.arrow_back),
         onPressed: () {
           Navigator.pop(context);
         },
@@ -250,14 +245,13 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
       title: const Text(
         'Events',
         style: TextStyle(
-          color: Colors.black87,
           fontSize: 24,
           fontWeight: FontWeight.bold,
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.black87),
+          icon: const Icon(Icons.more_vert),
           onPressed: () {
             // More options
           },
@@ -268,16 +262,14 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
 
   PreferredSizeWidget _buildSearchAppBar() {
     return AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        icon: const Icon(Icons.arrow_back),
         onPressed: _toggleSearch,
       ),
       title: const Text(
         'Search',
         style: TextStyle(
-          color: Colors.black87,
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
@@ -292,15 +284,15 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.search_outlined,
-                        color: Colors.grey[400],
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -310,7 +302,7 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                           focusNode: _searchFocusNode,
                           decoration: InputDecoration(
                             hintText: 'Search.. .',
-                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                               vertical: 12,
@@ -429,7 +421,6 @@ class _EventsListScreenState extends ConsumerState<EventsListScreen> {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

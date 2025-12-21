@@ -17,12 +17,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final userDataAsync = ref.watch(currentUserDataProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             // Back action
           },
@@ -30,14 +28,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text(
           'Profile',
           style: TextStyle(
-            color: Colors.black87,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons. more_vert, color: Colors. black87),
+            icon: const Icon(Icons. more_vert),
             onPressed: () {
               _showOptionsMenu(context);
             },
@@ -55,19 +52,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+              Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
               const SizedBox(height: 16),
               Text(
                 'Error loading profile',
                 style: TextStyle(
                   fontSize: 18,
-                  color: Colors.red[600],
+                  color: Theme.of(context).colorScheme.error,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 error.toString(),
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
             ],
@@ -97,16 +94,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   border: Border.all(
                     color: const Color(0xFF5B4EFF),
                     width: 3,
                   ),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person,
                   size: 50,
-                  color: Colors. grey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -118,10 +115,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               Text(
                 name,
-                style: const TextStyle(
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
                 ),
               ),
               IconButton(
@@ -145,7 +141,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 Container(
                   width: 1,
                   height: 40,
-                  color: Colors. grey[300],
+                  color: Theme.of(context).dividerColor,
                 ),
                 _buildStatItem(followers. toString(), 'Followers'),
               ],
@@ -188,7 +184,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
                     ),
                     IconButton(
@@ -206,9 +201,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   bio. isEmpty
                       ? 'No bio yet.  Tap the edit button to add one.'
                       : bio,
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
-                    color: bio.isEmpty ? Colors.grey[500] : Colors.grey[700],
                     height: 1.6,
                     fontStyle: bio.isEmpty ? FontStyle.italic : FontStyle.normal,
                   ),
@@ -231,7 +225,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
                     ),
                     IconButton(
@@ -248,9 +241,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 interests.isEmpty
                     ? Text(
                   'No interests added yet. Tap the edit button to add some.',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: 14,
-                    color: Colors.grey[500],
                     fontStyle: FontStyle.italic,
                   ),
                 )
@@ -275,18 +267,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       children: [
         Text(
           count,
-          style: const TextStyle(
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black87,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
             fontSize: 14,
-            color: Colors.grey[600],
           ),
         ),
       ],
@@ -575,7 +565,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showOptionsMenu(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius. vertical(top: Radius.circular(20)),
       ),

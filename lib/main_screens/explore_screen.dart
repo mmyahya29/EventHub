@@ -46,7 +46,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     return Scaffold(
       key: _scaffoldKey,
       drawer: const AppDrawer(),
-      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
@@ -187,21 +186,21 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       margin: const EdgeInsets.only(right: 12),
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected ?  category.color : Colors.grey[100],
+                        color: isSelected ?  category.color : Theme.of(context).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         children: [
                           Icon(
                             category.icon,
-                            color: isSelected ? Colors.white : Colors.grey[600],
+                            color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
                             size: 18,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             category.name,
                             style: TextStyle(
-                              color: isSelected ? Colors. white : Colors.grey[700],
+                              color: isSelected ? Colors. white : Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
                             ),
@@ -224,12 +223,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Upcoming Events',
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
                           ),
                         ),
                         TextButton(
@@ -265,12 +263,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.event_busy,
-                                    size: 48, color: Colors.grey[400]),
+                                    size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 const SizedBox(height: 12),
                                 Text(
                                   'No upcoming events',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     fontSize: 16,
                                   ),
                                 ),
@@ -302,7 +299,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         alignment: Alignment.center,
                         child: Text(
                           'Error loading events',
-                          style: TextStyle(color: Colors.red[400]),
+                          style: TextStyle(color: Theme.of(context).colorScheme.error),
                         ),
                       ),
                     ),
@@ -320,20 +317,18 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
+                                Text(
                                   'Invite your friends',
-                                  style: TextStyle(
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                const Text(
+                                Text(
                                   'Get \$20 for ticket',
-                                  style: TextStyle(
+                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     fontSize: 14,
-                                    color: Colors.black54,
                                   ),
                                 ),
                                 const SizedBox(height: 16),
@@ -382,12 +377,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Nearby You',
-                          style: TextStyle(
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
                           ),
                         ),
                         TextButton(
@@ -422,12 +416,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                             child: Column(
                               children: [
                                 Icon(Icons.location_off,
-                                    size: 48, color: Colors.grey[400]),
+                                    size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 const SizedBox(height: 12),
                                 Text(
                                   'No nearby events found',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
+                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                     fontSize: 16,
                                   ),
                                 ),
@@ -497,7 +490,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
         width: 240,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius. circular(16),
           boxShadow: [
             BoxShadow(
@@ -591,10 +584,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 children: [
                   Text(
                     event['title'] ?? 'Event Title',
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -676,7 +668,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -724,10 +716,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     const SizedBox(height: 4),
                     Text(
                       event['title'] ?? 'Event Title',
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors. black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

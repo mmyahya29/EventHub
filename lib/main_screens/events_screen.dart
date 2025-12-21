@@ -29,12 +29,10 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons. arrow_back, color: Colors. black87),
+          icon: const Icon(Icons. arrow_back),
           onPressed: () {
             // Back action
           },
@@ -42,14 +40,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
         title: const Text(
           'Events',
           style: TextStyle(
-            color: Colors.black87,
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons. more_vert, color: Colors. black87),
+            icon: const Icon(Icons. more_vert),
             onPressed: () {
               // More options action
             },
@@ -62,13 +59,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(25),
             ),
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(25),
                 boxShadow: [
                   BoxShadow(
@@ -141,13 +138,13 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Error loading events',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.red[600],
+                color: Theme.of(context).colorScheme.error,
               ),
             ),
           ],
@@ -171,7 +168,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -219,10 +216,9 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
                     const SizedBox(height: 4),
                     Text(
                       event['title'] ?? 'Event Title',
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -289,7 +285,7 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
                   width: 140,
                   height: 140,
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -394,12 +390,11 @@ class _EventsScreenState extends ConsumerState<EventsScreen> with SingleTickerPr
             ),
             const SizedBox(height: 32),
             // Title
-            const Text(
+            Text(
               'No Upcoming Event',
-              style: TextStyle(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 12),

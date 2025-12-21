@@ -43,25 +43,25 @@ class _MainNavigationState extends State<MainNavigation> {
         icon: const Icon(Icons.explore_outlined),
         title: ("Explore"),
         activeColorPrimary: activeColor,
-        inactiveColorPrimary: Colors.grey,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.calendar_today_outlined),
         title: ("Events"),
         activeColorPrimary: activeColor,
-        inactiveColorPrimary: Colors.grey,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.token_outlined),
         title: ("Booked Events"),
         activeColorPrimary: activeColor,
-        inactiveColorPrimary: Colors.grey,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
       PersistentBottomNavBarItem(
         icon: const Icon(Icons.person_outline),
         title: ("Profile"),
         activeColorPrimary: activeColor,
-        inactiveColorPrimary: Colors.grey,
+        inactiveColorPrimary: Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     ];
   }

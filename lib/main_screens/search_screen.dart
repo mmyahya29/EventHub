@@ -38,21 +38,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final popularSearchesAsync = ref.watch(popularSearchesProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         title: Container(
           height: 45,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: Colors.grey[300]! ),
+            border: Border.all(color: Theme.of(context).dividerColor),
           ),
           child: Row(
             children: [
-              Icon(Icons.search_outlined, color: Colors.grey[400], size: 20),
+              Icon(Icons.search_outlined, color: Theme.of(context).colorScheme.onSurfaceVariant, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
@@ -60,7 +58,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   focusNode:  _searchFocusNode,
                   decoration: InputDecoration(
                     hintText: 'Search events.. .',
-                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
@@ -102,7 +100,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
             ),
           ),
           const SizedBox(height:  16),
@@ -112,7 +109,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 return Center(
                   child: Text(
                     'No popular events',
-                    style: TextStyle(color: Colors.grey[500]),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 );
               }
@@ -131,7 +130,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight. bold,
-              color: Colors. black87,
             ),
           ),
           const SizedBox(height: 16),
@@ -158,20 +156,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                Icon(Icons.search_off, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(height: 16),
                 Text(
                   'No events found',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontSize: 18,
-                    color: Colors.grey[600],
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Try searching with different keywords',
-                  style:  TextStyle(fontSize: 14, color: Colors. grey[500]),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
                 ),
               ],
             ),
@@ -193,11 +190,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+            Icon(Icons.error_outline, size: 64, color: Theme.of(context).colorScheme.error),
             const SizedBox(height: 16),
             Text(
               'Error loading results',
-              style: TextStyle(fontSize: 18, color: Colors. red[600]),
+              style: TextStyle(fontSize: 18, color: Theme.of(context).colorScheme.error),
             ),
           ],
         ),
@@ -220,7 +217,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow:  [
             BoxShadow(
@@ -268,10 +265,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     const SizedBox(height: 4),
                     Text(
                       event['title'] ?? 'Event Title',
-                      style: const TextStyle(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

@@ -22,7 +22,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     final auth = ref.read(firebaseAuthProvider);
     return Drawer(
       child: Container(
-        color: Colors.white,
+        color: Theme.of(context).drawerTheme.backgroundColor,
         child: Column(
           children: [
             // Header with Profile
@@ -42,16 +42,16 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     height: 70,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Colors.grey[300],
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       border: Border.all(
                         color: const Color(0xFF5B4EFF),
                         width: 3,
                       ),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.person,
                       size: 35,
-                      color: Colors.grey,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     // Replace with actual image:
                     // child: ClipOval(
@@ -68,7 +68,6 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
                     ),
                   ),
                 ],
@@ -205,14 +204,14 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
     return ListTile(
       leading: Icon(
         icon,
-        color: textColor ?? Colors.grey[700],
+        color: textColor ?? Theme.of(context).colorScheme.onSurface,
         size: 24,
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
-          color: textColor ?? Colors.black87,
+          color: textColor,
           fontWeight: FontWeight.w500,
         ),
       ),

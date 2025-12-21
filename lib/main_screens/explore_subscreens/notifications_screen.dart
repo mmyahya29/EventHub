@@ -87,16 +87,16 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline, size: 48, color: Colors.grey[400]),
+              Icon(Icons.error_outline, size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
               const SizedBox(height: 16),
               Text(
                 'Error loading notifications',
-                style: TextStyle(color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.bodyLarge,
               ),
               const SizedBox(height: 8),
               Text(
                 error.toString(),
-                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -114,23 +114,21 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           Icon(
             Icons.notifications_off_outlined,
             size: 80,
-            color: Colors.grey[300],
+            color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.5),
           ),
           const SizedBox(height: 16),
           Text(
             'No notifications yet',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'When you get notifications, they\'ll show up here',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontSize: 14,
-              color: Colors.grey[500],
             ),
             textAlign: TextAlign.center,
           ),
@@ -231,18 +229,16 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
                     // Message
                     Text(
                       notification.message,
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontSize: 14,
-                        color: Colors.grey[600],
                       ),
                     ),
                     const SizedBox(height: 4),
                     // Time
                     Text(
                       timeago.format(notification.createdAt),
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         fontSize: 12,
-                        color: Colors.grey[500],
                       ),
                     ),
                   ],

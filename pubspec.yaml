@@ -52,8 +52,8 @@ dependencies:
   
   # Notifications
   firebase_messaging: ^16.0.4
-  flutter_local_notifications: ^16.3.2
-  
+  flutter_local_notifications: ^17.2.1+2
+
   # Sharing
   share_plus: ^7.2.2
   

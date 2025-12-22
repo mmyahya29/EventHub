@@ -8,9 +8,11 @@ plugins {
 android {
     namespace = "com.example.event_hub"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion // Updated to specific NDK version
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // Required for flutter_local_notifications
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
@@ -21,19 +23,19 @@ android {
 
     defaultConfig {
         applicationId = "com.example.event_hub"
-        // IMPORTANT: Changed minSdk to 21 for Firebase compatibility
+
+        // Ensure this is at least 21 for Firebase and Local Notifications
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        // Enable multidex for Firebase (required for apps with many dependencies)
+        // Required for apps with many dependencies (Firebase + Notifications)
         multiDexEnabled = true
     }
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
@@ -45,8 +47,9 @@ flutter {
 }
 
 dependencies {
-    // Firebase dependencies - these are auto-managed by FlutterFire
-    // but adding them explicitly for clarity
+    // Core Library Desugaring for Java 8+ API support
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Firebase dependencies
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
@@ -55,5 +58,5 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
 }
 
-// IMPORTANT: Apply Google Services plugin at the END of the file
+// Apply Google Services plugin at the END of the file
 apply(plugin = "com.google.gms.google-services")

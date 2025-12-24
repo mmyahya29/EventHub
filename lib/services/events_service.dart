@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'notification_service.dart';
+import 'enhanced_notification_service.dart';
 import '../models/notification_model.dart';
 
 class EventService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final NotificationService _notificationService = NotificationService();
+  final EnhancedNotificationService _enhancedNotificationService = EnhancedNotificationService();
 
   // Add a single event
   Future<String> addEvent(Map<String, dynamic> eventData) async {
@@ -12,13 +14,22 @@ class EventService {
       final docRef = await _firestore.collection('events').add(eventData);
       print('✅ Event added successfully!');
       
-      // Send notifications to followers about new event
+      // Send notifications to followers about new event with enhanced service
       if (eventData['organizerId'] != null) {
         try {
-          await _sendNewEventNotifications(
+          // Get organizer details
+          final organizerDoc = await _firestore
+              .collection('users')
+              .doc(eventData['organizerId'])
+              .get();
+          final organizerName = organizerDoc.data()?['displayName'] ?? 'An organizer';
+          
+          await _enhancedNotificationService.sendNewEventFromOrganizerNotification(
             organizerId: eventData['organizerId'],
+            organizerName: organizerName,
+            eventId: docRef.id,
             eventTitle: eventData['title'] ?? 'New Event',
-            eventId: docRef.id, // Use the actual document ID
+            eventImageUrl: eventData['imageUrl'] as String?,
           );
         } catch (e) {
           print('⚠️ Error sending new event notifications: $e');

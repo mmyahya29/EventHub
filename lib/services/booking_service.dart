@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/booking_model.dart';
 import 'notification_service.dart';
+import 'enhanced_notification_service.dart';
 
 class BookingService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final NotificationService _notificationService = NotificationService();
+  final EnhancedNotificationService _enhancedNotificationService = EnhancedNotificationService();
 
   // Create a new booking under user's bookings subcollection
   Future<String> createBooking(Booking booking) async {
@@ -28,6 +30,24 @@ class BookingService {
       } catch (e) {
         print('⚠️ Error sending booking notification: $e');
         // Don't fail the booking if notification fails
+      }
+      
+      // Schedule event reminder (24 hours before event)
+      try {
+        // Get event details for imageUrl
+        final eventDoc = await _firestore.collection('events').doc(booking.eventId).get();
+        final eventImageUrl = eventDoc.data()?['imageUrl'] as String?;
+        
+        await _enhancedNotificationService.scheduleEventReminder(
+          userId: booking.userId,
+          eventId: booking.eventId,
+          eventTitle: booking.eventTitle,
+          eventDate: booking.eventDate,
+          eventImageUrl: eventImageUrl,
+        );
+      } catch (e) {
+        print('⚠️ Error scheduling event reminder: $e');
+        // Don't fail the booking if reminder scheduling fails
       }
       
       return docRef.id;

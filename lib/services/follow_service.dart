@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'notification_service.dart';
+import 'enhanced_notification_service.dart';
 
 class FollowService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final NotificationService _notificationService = NotificationService();
+  final EnhancedNotificationService _enhancedNotificationService = EnhancedNotificationService();
 
   // Follow a user
   Future<void> followUser({
@@ -50,16 +52,18 @@ class FollowService {
       await batch.commit();
       print('✅ Successfully followed user');
       
-      // Send follower notification
+      // Send follower notification with enhanced service
       try {
-        // Get current user's display name
+        // Get current user's display name and profile image
         final currentUserDoc = await _firestore.collection('users').doc(currentUserId).get();
         final currentUserName = currentUserDoc.data()?['displayName'] ?? 'Someone';
+        final currentUserImageUrl = currentUserDoc.data()?['photoURL'] as String?;
         
-        await _notificationService.sendFollowerNotification(
+        await _enhancedNotificationService.sendNewFollowerNotification(
           userId: targetUserId,
           followerName: currentUserName,
           followerId: currentUserId,
+          followerImageUrl: currentUserImageUrl,
         );
       } catch (e) {
         print('⚠️ Error sending follower notification: $e');

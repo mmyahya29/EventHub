@@ -3,10 +3,12 @@ import '../models/chat_message.dart';
 import '../models/chat_room.dart';
 import '../models/notification_model.dart';
 import 'notification_service.dart';
+import 'enhanced_notification_service.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final NotificationService _notificationService = NotificationService();
+  final EnhancedNotificationService _enhancedNotificationService = EnhancedNotificationService();
 
   // Get or create chat room between two users
   Future<String> getOrCreateChatRoom(String currentUserId, String otherUserId,
@@ -79,22 +81,19 @@ class ChatService {
         'unreadCount': currentUnreadCount,
       });
       
-      // Send message notification to the other user
+      // Send message notification with enhanced service
       try {
-        await _notificationService.createNotification(
-          NotificationModel(
-            id: '',
-            userId: otherUserId,
-            type: 'message',
-            title: 'New Message',
-            message: '$senderName sent you a message',
-            createdAt: DateTime.now(),
-            isRead: false,
-            data: {
-              'chatId': chatId,
-              'senderId': senderId,
-            },
-          ),
+        // Get sender's profile image
+        final senderDoc = await _firestore.collection('users').doc(senderId).get();
+        final senderImageUrl = senderDoc.data()?['photoURL'] as String?;
+        
+        await _enhancedNotificationService.sendNewMessageNotification(
+          recipientUserId: otherUserId,
+          senderName: senderName,
+          senderId: senderId,
+          messagePreview: text,
+          chatId: chatId,
+          senderImageUrl: senderImageUrl,
         );
       } catch (e) {
         print('⚠️ Error sending message notification: $e');

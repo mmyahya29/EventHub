@@ -8,6 +8,7 @@ import '../providers/auth_provider.dart';
 import '../widgets/search_bar.dart';
 import 'add_events_screens.dart';
 import 'events_subscreens/event_details_screen.dart';
+import 'events_subscreens/explore_events_screen.dart';
 import 'explore_subscreens/notifications_screen.dart';
 import 'explore_subscreens/side_drawer.dart';
 
@@ -72,35 +73,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                             _scaffoldKey. currentState?.openDrawer();
                           },
                         ),
-                        Column(
-                          children: [
-                            const Text(
-                              'Current Location',
-                              style: TextStyle(
-                                color: Colors. white70,
-                                fontSize: 12,
-                              ),
-                            ),
-                            Row(
-                              children: const [
-                                Text(
-                                  'New York, USA',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(width: 4),
-                                Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        Text('Event Hub', style: TextStyle(fontSize: 22, color: Colors.white, fontWeight: FontWeight.w800),),
                         Stack(
                           children: [
                             IconButton(
@@ -164,52 +137,6 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     SearchBarWidget(hintText: 'Search... '),
                   ],
                 ),
-              ),
-            ),
-            // Category Chips
-            Container(
-              height: 70,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _categories.length,
-                itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  final isSelected = selectedCategory == category.name;
-                  return GestureDetector(
-                    onTap: () {
-                      ref.read(selectedCategoryProvider.notifier).state =
-                          category.name;
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 12),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ?  category.color : Theme.of(context).colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            category.icon,
-                            color: isSelected ? Colors.white : Theme.of(context).colorScheme.onSurfaceVariant,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            category.name,
-                            style: TextStyle(
-                              color: isSelected ? Colors. white : Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
               ),
             ),
             // Content
@@ -303,155 +230,123 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    // Invite Banner
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0F7FA),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Invite your friends',
-                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Get \$20 for ticket',
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    // Invite action
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF00CEC9),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 10),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    elevation: 0,
-                                  ),
-                                  child: const Text(
-                                    'INVITE',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                    const SizedBox(height: 40),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EventsListScreen(),
                             ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF5B4EFF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius. circular(12),
                           ),
-                          const SizedBox(width: 16),
-                          Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.white. withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(12),
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Text(
+                              'EXPLORE EVENTS',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1,
+                              ),
                             ),
-                            child: const Icon(Icons.card_giftcard,
-                                size: 50, color: Colors.white),
-                          ),
-                        ],
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward, size: 18),
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
                     // Nearby You Section
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Nearby You',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            // See all action
-                          },
-                          child: Row(
-                            children: const [
-                              Text(
-                                'See All',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(Icons. arrow_forward_ios,
-                                  color: Colors.grey, size: 12),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Nearby Events
-                    nearbyEventsAsync. when(
-                      data: (events) {
-                        if (events.isEmpty) {
-                          return Container(
-                            padding: const EdgeInsets.all(32),
-                            alignment: Alignment.center,
-                            child: Column(
-                              children: [
-                                Icon(Icons.location_off,
-                                    size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No nearby events found',
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-                        return Column(
-                          children: events. take(3).map((event) {
-                            return _buildNearbyEventCard(event);
-                          }).toList(),
-                        );
-                      },
-                      loading: () => const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(32),
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF5B4EFF),
-                          ),
-                        ),
-                      ),
-                      error: (error, stack) => Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32),
-                          child: Text(
-                            'Error loading nearby events',
-                            style: TextStyle(color: Colors.red[400]),
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Row(
+                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //   children: [
+                    //     Text(
+                    //       'Nearby You',
+                    //       style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    //         fontSize: 18,
+                    //         fontWeight: FontWeight.bold,
+                    //       ),
+                    //     ),
+                    //     TextButton(
+                    //       onPressed: () {
+                    //         // See all action
+                    //       },
+                    //       child: Row(
+                    //         children: const [
+                    //           Text(
+                    //             'See All',
+                    //             style: TextStyle(
+                    //               color: Colors.grey,
+                    //               fontSize: 14,
+                    //             ),
+                    //           ),
+                    //           SizedBox(width: 4),
+                    //           Icon(Icons. arrow_forward_ios,
+                    //               color: Colors.grey, size: 12),
+                    //         ],
+                    //       ),
+                    //     ),
+                    //   ],
+                    // ),
+                    // const SizedBox(height: 12),
+                    // // Nearby Events
+                    // nearbyEventsAsync. when(
+                    //   data: (events) {
+                    //     if (events.isEmpty) {
+                    //       return Container(
+                    //         padding: const EdgeInsets.all(32),
+                    //         alignment: Alignment.center,
+                    //         child: Column(
+                    //           children: [
+                    //             Icon(Icons.location_off,
+                    //                 size: 48, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    //             const SizedBox(height: 12),
+                    //             Text(
+                    //               'No nearby events found',
+                    //               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    //                 fontSize: 16,
+                    //               ),
+                    //             ),
+                    //           ],
+                    //         ),
+                    //       );
+                    //     }
+                    //     return Column(
+                    //       children: events. take(3).map((event) {
+                    //         return _buildNearbyEventCard(event);
+                    //       }).toList(),
+                    //     );
+                    //   },
+                    //   loading: () => const Center(
+                    //     child: Padding(
+                    //       padding: EdgeInsets.all(32),
+                    //       child: CircularProgressIndicator(
+                    //         color: Color(0xFF5B4EFF),
+                    //       ),
+                    //     ),
+                    //   ),
+                    //   error: (error, stack) => Center(
+                    //     child: Padding(
+                    //       padding: const EdgeInsets.all(32),
+                    //       child: Text(
+                    //         'Error loading nearby events',
+                    //         style: TextStyle(color: Colors.red[400]),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),

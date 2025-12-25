@@ -28,7 +28,7 @@ class _MainNavigationState extends State<MainNavigation> {
     return const [
       ExploreScreen(),
       EventsScreen(),
-      SearchScreen(),
+      MyBookingsScreen(),
       ProfileScreen(),
     ];
   }

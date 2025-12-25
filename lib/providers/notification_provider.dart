@@ -7,7 +7,7 @@ final notificationServiceProvider = Provider<NotificationService>((ref) {
   return NotificationService();
 });
 
-// User Notifications Stream Provider
+// User Notifications Stream Providere
 final userNotificationsProvider = StreamProvider.family<List<NotificationModel>, String>(
   (ref, userId) {
     final service = ref.watch(notificationServiceProvider);

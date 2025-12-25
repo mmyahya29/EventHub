@@ -1,4 +1,5 @@
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/FAQ_screen.dart';
+import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/about_us_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/booked_events.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/chats_list_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/settings_screen.dart';
@@ -80,19 +81,6 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   _buildMenuItem(
-                    icon: Icons.token_outlined,
-                    title: 'Booked Tickets',
-                    onTap: () {
-                      Navigator.pop(context); // Close drawer
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MyBookingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildMenuItem(
                     icon: Icons.message_outlined,
                     title: 'Chats',
                     onTap: () {
@@ -106,24 +94,15 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                     },
                   ),
                   _buildMenuItem(
-                    icon: Icons.calendar_today_outlined,
-                    title: 'Calendar',
-                    onTap: () {
-                      // Navigate to calendar
-                    },
-                  ),
-                  _buildMenuItem(
-                    icon: Icons.bookmark_border,
-                    title: 'Bookmark',
-                    onTap: () {
-                      // Navigate to bookmarks
-                    },
-                  ),
-                  _buildMenuItem(
                     icon: Icons.mail_outline,
                     title: 'Contact Us',
                     onTap: () {
-                      // Navigate to contact
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AboutScreen(),
+                        ),
+                      );
                     },
                   ),
                   _buildMenuItem(

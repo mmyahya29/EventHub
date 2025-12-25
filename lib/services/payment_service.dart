@@ -1,132 +1,64 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/payment.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class PaymentService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+class PolarPaymentService {
+  // Use your token from sandbox.polar.sh
+  static const String _accessToken = 'polar_oat_oYqOJKDcNkxohv8Gg6nZBWWcIgP8rARt95pue3Ru3Kn';
+  static const String _baseUrl = 'https://sandbox-api.polar.sh/v1';
 
-  // Simplified payment - no actual payment processing
-  // Just creates a payment record for tracking purposes
   Future<Map<String, dynamic>> processPayment({
-    required String userId,
-    required String bookingId,
-    required String eventId,
     required double amount,
-    String currency = 'USD',
+    required String currency,
+    required String description,
+    required Map<String, dynamic> metadata,
+    required String paymentMethod,
   }) async {
     try {
-      // Create payment record without actual payment processing
-      final payment = Payment(
-        id: '',
-        userId: userId,
-        bookingId: bookingId,
-        eventId: eventId,
-        amount: amount,
-        currency: currency,
-        paymentMethod: 'direct',
-        status: 'completed',
-        createdAt: DateTime.now(),
-        completedAt: DateTime.now(),
+      print('🚀 Starting Polar Transaction: $description');
+
+      // FIXED:
+      // 1. Changed success_url to https (you can handle redirect back to app via web)
+      // 2. Changed structure to use 'product_price_id' instead of generic product_name
+      final response = await http.post(
+        Uri.parse('$_baseUrl/checkouts/custom/'),
+        headers: {
+          'Authorization': 'Bearer $_accessToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          // IMPORTANT: Replace this with a real Price ID from your Sandbox Dashboard
+          // Go to Sandbox -> Products -> Price -> Copy ID (starts with 'pr_...')
+          'product_id': '2a9b8265-abef-4374-acaa-3604b052bab8',
+
+          'success_url': 'https://example.com/success', // Must be https
+          'metadata': {
+            ...metadata,
+            'test_mode': 'true',
+          },
+        }),
       );
 
-      await _savePayment(payment);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        print('✅ Checkout Session Created: ${data['id']}');
 
-      return {
-        'success': true,
-        'paymentId': payment.id,
-      };
-    } catch (e) {
-      print('❌ Payment record creation failed: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
-    }
-  }
-
-  // Save payment to Firestore
-  Future<String> _savePayment(Payment payment) async {
-    try {
-      final docRef = await _firestore
-          .collection('payments')
-          .add(payment.toMap());
-      
-      print('✅ Payment saved: ${docRef.id}');
-      return docRef.id;
-    } catch (e) {
-      print('❌ Error saving payment: $e');
-      rethrow;
-    }
-  }
-
-  // Get payment by booking ID
-  Future<Payment?> getPaymentByBookingId(String bookingId) async {
-    try {
-      final snapshot = await _firestore
-          .collection('payments')
-          .where('bookingId', isEqualTo: bookingId)
-          .limit(1)
-          .get();
-
-      if (snapshot.docs.isNotEmpty) {
-        return Payment.fromFirestore(snapshot.docs.first);
+        // Return success and the URL for testing
+        return {
+          'success': true,
+          'transactionId': data['id'],
+          'url': data['url'],
+          'status': data['status'],
+        };
+      } else {
+        print('❌ Polar API Error: ${response.body}');
+        return {
+          'success': false,
+          'error': 'Validation Error: ${response.statusCode}',
+        };
       }
-      return null;
     } catch (e) {
-      print('❌ Error getting payment: $e');
-      return null;
-    }
-  }
-
-  // Get user's payments
-  Stream<List<Payment>> getUserPayments(String userId) {
-    return _firestore
-        .collection('payments')
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => Payment.fromFirestore(doc))
-          .toList();
-    });
-  }
-
-  // For test mode - simulate payment without Stripe
-  Future<Map<String, dynamic>> simulatePayment({
-    required String userId,
-    required String bookingId,
-    required String eventId,
-    required double amount,
-    String currency = 'USD',
-  }) async {
-    try {
-      // Create a test payment record
-      final payment = Payment(
-        id: '',
-        userId: userId,
-        bookingId: bookingId,
-        eventId: eventId,
-        amount: amount,
-        currency: currency,
-        paymentMethod: 'test',
-        status: 'completed',
-        createdAt: DateTime.now(),
-        completedAt: DateTime.now(),
-        metadata: {'test': true},
-      );
-
-      await _savePayment(payment);
-
-      return {
-        'success': true,
-        'paymentId': payment.id,
-      };
-    } catch (e) {
-      print('❌ Simulated payment failed: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      print('❌ Polar Service Exception: $e');
+      return {'success': false, 'error': e.toString()};
     }
   }
 }

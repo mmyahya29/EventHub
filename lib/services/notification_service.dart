@@ -102,17 +102,23 @@ class NotificationService {
     }
   }
 
-  // Get user notifications
   Stream<List<NotificationModel>> getUserNotifications(String userId) {
+    // 1. We query only the collection without combined filters/ordering
     return _firestore
         .collection('notifications')
-        .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
+        .snapshots() // Get all notifications (real-time)
         .map((snapshot) {
-      return snapshot.docs
+
+      // 2. Perform filtering and sorting client-side in Dart
+      final notifications = snapshot.docs
           .map((doc) => NotificationModel.fromFirestore(doc))
+          .where((notification) => notification.userId == userId) // Client-side filter
           .toList();
+
+      // 3. Sort by date descending (Newest first)
+      notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+      return notifications;
     });
   }
 

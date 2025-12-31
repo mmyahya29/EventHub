@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:event_hub/providers/auth_provider.dart';
 import 'sign_up_screen.dart';
+import 'verification_screen.dart'; // Import this to redirect if unverified
 
 class SignInScreen extends ConsumerStatefulWidget {
   const SignInScreen({Key? key}) : super(key: key);
@@ -26,12 +27,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     super.dispose();
   }
 
-  // Email validation
   bool _emailValidator(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  // Get user-friendly error messages
   String _getErrorMessage(String code) {
     switch (code) {
       case 'user-not-found':
@@ -43,7 +42,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       case 'user-disabled':
         return 'This user account has been disabled.';
       case 'too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
+        return 'Too many attempts. Please try again later.';
       case 'invalid-credential':
         return 'Invalid email or password.';
       default:
@@ -51,7 +50,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
   }
 
-  // Sign in with email and password
+  // --- Core Authentication Logic ---
   Future<void> _authenticate() async {
     final authService = ref.read(authServiceProvider);
     final email = _emailController.text.trim();
@@ -68,58 +67,64 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
     }
 
     try {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isLoading = true);
 
-      await authService.signInWithEmailPassword(email, password);
-      bool verified = await authService.isEmailVerified();
-      if(!verified){
-        authService.signOut();
-        _showSnackBar("Email not Verified", isError: true);
+      // 1. Attempt Sign In
+      final userCredential = await authService.signInWithEmailPassword(email, password);
+      final user = userCredential.user;
+
+      // 2. IMPORTANT: Reload user to get latest verification status from Firebase
+      await user?.reload();
+      final updatedUser = FirebaseAuth.instance.currentUser;
+
+      // 3. Verify Check
+      if (updatedUser != null && !updatedUser.emailVerified) {
+        // Log them out immediately so the app listener doesn't move them to Home
+        await authService.signOut();
+
+        setState(() => _isLoading = false);
+        _showSnackBar('Email not verified. Please check your inbox.', isError: true);
+
+        // Optional: Redirect to verification help screen
+        if (mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const VerificationScreen()),
+          );
+        }
+        return;
       }
 
+      // 4. Handle Remember Me
       if (_rememberMe) {
         await authService.saveCredentials(email, password);
       }
 
       if (mounted) {
+        setState(() => _isLoading = false);
         _showSnackBar('Login Successful', isError: false);
-        // Navigation will happen automatically via authStateProvider in main.dart
+        // Navigation happens automatically via authStateProvider in main.dart
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      String message = _getErrorMessage(e.code);
-      _showSnackBar(message, isError: true);
+      setState(() => _isLoading = false);
+      _showSnackBar(_getErrorMessage(e.code), isError: true);
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
       _showSnackBar('An unexpected error occurred', isError: true);
     }
   }
 
-  // Facebook Sign-In
   Future<void> _signInWithFacebook() async {
     final authService = ref.read(authServiceProvider);
-    
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
+      setState(() => _isLoading = true);
       final userCredential = await authService.signInWithFacebook();
-      
       if (userCredential != null && mounted) {
         _showSnackBar('Facebook Sign-In Successful', isError: false);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSnackBar('Facebook Sign-In failed: ${e.toString()}', isError: true);
+      setState(() => _isLoading = false);
+      _showSnackBar('Facebook Sign-In failed', isError: true);
     }
   }
 
@@ -144,84 +149,32 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 80),
-              // Logo
-              Image.asset(
-                'assets/images/eventhublogo.png',
-                height: 60,
-              ),
+              const SizedBox(height: 60),
+              Image.asset('assets/images/eventhublogo.png', height: 60),
               const SizedBox(height: 40),
-              // Title
               const Text(
                 'Sign in',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
               ),
               const SizedBox(height: 24),
               // Email Field
-              TextField(
+              _buildTextField(
                 controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
-                  hintText: 'abc@email.com',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF5B4EFF)),
-                  ),
-                ),
+                hint: 'abc@email.com',
+                icon: Icons.email_outlined,
+                type: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               // Password Field
-              TextField(
+              _buildTextField(
                 controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  hintText: 'Your password',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF5B4EFF)),
-                  ),
-                ),
+                hint: 'Your password',
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscure: _obscurePassword,
+                onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               // Remember Me & Forgot Password
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -230,110 +183,57 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     children: [
                       Switch(
                         value: _rememberMe,
-                        onChanged: (value) {
-                          setState(() {
-                            _rememberMe = value;
-                          });
-                        },
+                        onChanged: (val) => setState(() => _rememberMe = val),
                         activeColor: const Color(0xFF5B4EFF),
                       ),
-                      const Text(
-                        'Remember Me',
-                        style: TextStyle(color: Colors.black87),
-                      ),
+                      const Text('Remember Me'),
                     ],
                   ),
                   TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ResetPasswordScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(color: Colors.black87),
-                    ),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ResetPasswordScreen())),
+                    child: const Text('Forgot Password?', style: TextStyle(color: Colors.black87)),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
               // Sign In Button
               _isLoading
-                  ? Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5B4EFF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                ),
-              )
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B4EFF)))
                   : ElevatedButton(
                 onPressed: _authenticate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B4EFF),
-                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                child: Row(
+                child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'SIGN IN',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                  children: [
+                    Text('SIGN IN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1)),
                     SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, size: 20),
+                    Icon(Icons.arrow_forward, size: 20, color: Colors.white),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 30),
               // OR Divider
-              Row(
+              const Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
+                  Expanded(child: Divider()),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('OR', style: TextStyle(color: Colors.grey))),
+                  Expanded(child: Divider()),
                 ],
               ),
-              const SizedBox(height: 24),
-              // Facebook Sign In
+              const SizedBox(height: 30),
+              // Facebook
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _signInWithFacebook,
                 icon: const Icon(Icons.facebook, color: Colors.blue),
-                label: const Text(
-                  'Login with Facebook',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                ),
+                label: const Text('Login with Facebook', style: TextStyle(color: Colors.black87)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey[300]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 24),
@@ -341,32 +241,47 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    "Don't have an account? ",
-                    style: TextStyle(color: Colors.black87),
-                  ),
+                  const Text("Don't have an account? "),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SignUpScreen(),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      'Sign up',
-                      style: TextStyle(
-                        color: Color(0xFF5B4EFF),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SignUpScreen())),
+                    child: const Text('Sign up', style: TextStyle(color: Color(0xFF5B4EFF), fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+    bool isPassword = false,
+    bool obscure = false,
+    VoidCallback? onToggle,
+    TextInputType type = TextInputType.text,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: type,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.grey),
+        suffixIcon: isPassword
+            ? IconButton(
+          icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey),
+          onPressed: onToggle,
+        )
+            : null,
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF5B4EFF))),
       ),
     );
   }

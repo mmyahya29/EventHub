@@ -17,6 +17,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
@@ -30,20 +31,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     super.dispose();
   }
 
-  // Email validation
   bool _emailValidator(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  // Get user-friendly error messages
   String _getErrorMessage(String code) {
     switch (code) {
       case 'email-already-in-use':
         return 'This email is already registered.';
       case 'invalid-email':
         return 'The email address is invalid.';
-      case 'operation-not-allowed':
-        return 'Email/password accounts are not enabled.';
       case 'weak-password':
         return 'The password is too weak. Use at least 6 characters.';
       default:
@@ -51,121 +48,105 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     }
   }
 
-  // Sign up with email and password
-  Future<void> _signup() async {
-    final authService = ref.read(authServiceProvider);
-    final firestore = ref.read(firestoreProvider);
-
+  // Helper to validate all inputs before calling Firebase
+  bool _validateInputs() {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final confirmPassword = _confirmPasswordController.text.trim();
 
-    // Validation
     if (name.isEmpty) {
       _showSnackBar('Please enter your name', isError: true);
-      return;
+      return false;
     }
-
     if (!_emailValidator(email)) {
       _showSnackBar('Invalid Email', isError: true);
-      return;
+      return false;
     }
-
-    if (password.isEmpty || confirmPassword.isEmpty) {
-      _showSnackBar('Please enter your password', isError: true);
-      return;
-    }
-
-    if (password != confirmPassword) {
-      _showSnackBar('Passwords do not match', isError: true);
-      return;
-    }
-
     if (password.length < 6) {
       _showSnackBar('Password must be at least 6 characters', isError: true);
-      return;
+      return false;
     }
+    if (password != confirmPassword) {
+      _showSnackBar('Passwords do not match', isError: true);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _signup() async {
+    if (!_validateInputs()) return;
+
+    final authService = ref.read(authServiceProvider);
+    final firestore = FirebaseFirestore.instance; // Or use your provider
+
+    setState(() => _isLoading = true);
 
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      // Create user account
-      final userCredential = await authService.signUpWithEmailPassword(email, password);
+      // 1. Create the user in Firebase Auth
+      final userCredential = await authService.signUpWithEmailPassword(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
 
       final user = userCredential.user;
 
       if (user != null) {
-        // Update display name
-        await user.updateDisplayName(name);
-        await user.reload();
+        // 2. Update the Profile Display Name
+        await user.updateDisplayName(_nameController.text.trim());
 
-        // Save user data to Firestore
+        // 3. Save additional info to Firestore
         await firestore.collection('users').doc(user.uid).set({
           'uid': user.uid,
-          'name': name,
-          'displayName': name,
-          'email': email,
+          'name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
+          'emailVerified': false, // Initial state
           'followingCount': 0,
           'followerCount': 0,
-          'bio': 'Enjoy your favorite dishe and a lovely your friends and family and have a great time. Food from local food trucks will be available for purchase.',
-          'interests': ['Gaming', 'Clubbing', 'Concerts', 'Music', 'Theater', 'Art'],
+          'bio': 'Welcome to Event Hub!',
+          'interests': ['Gaming', 'Music', 'Art'],
         });
 
-        // Send email verification
-        await authService.sendEmailVerification();
+        // 4. Send the Verification Email
+        await user.sendEmailVerification();
 
         if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          _showSnackBar('Account Created! Please check your email for verification.', isError: false);
+          setState(() => _isLoading = false);
 
-          // Navigate to verification screen
-          Navigator.pushReplacement(
+          _showSnackBar('Verification email sent! Please check your inbox.', isError: false);
+
+          // 5. Move to Verification Screen
+          // We use pushAndRemoveUntil so they can't simply click "back" to the form
+          Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              builder: (context) => const VerificationScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const VerificationScreen()),
+                (route) => false,
           );
         }
       }
     } on FirebaseAuthException catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      String message = _getErrorMessage(e.code);
-      _showSnackBar(message, isError: true);
+      setState(() => _isLoading = false);
+      _showSnackBar(_getErrorMessage(e.code), isError: true);
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
       _showSnackBar('An unexpected error occurred', isError: true);
     }
   }
 
-  // Facebook Sign-In
   Future<void> _signInWithFacebook() async {
     final authService = ref.read(authServiceProvider);
-    
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
+      setState(() => _isLoading = true);
       final userCredential = await authService.signInWithFacebook();
-      
       if (userCredential != null && mounted) {
-        _showSnackBar('Facebook Sign-Up Successful', isError: false);
+        // Facebook users are usually verified by Facebook,
+        // but you can still check userCredential.user.emailVerified
+        _showSnackBar('Success!', isError: false);
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSnackBar('Facebook Sign-Up failed: ${e.toString()}', isError: true);
+      setState(() => _isLoading = false);
+      _showSnackBar('Facebook Sign-Up failed', isError: true);
     }
   }
 
@@ -175,7 +156,6 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         content: Text(isError ? '❌ $message' : '✅ $message'),
         backgroundColor: isError ? Colors.red : Colors.green,
         behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -198,246 +178,96 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 40),
-              // Logo
-              Image.asset(
-                'assets/images/eventhublogo.png',
-                height: 60,
+              const SizedBox(height: 20),
+              Center(
+                child: Image.asset('assets/images/eventhublogo.png', height: 60),
               ),
               const SizedBox(height: 40),
-              // Title
               const Text(
                 'Sign up',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
-              // Full Name Field
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
-                  hintText: 'Full name',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF5B4EFF)),
-                  ),
-                ),
-              ),
+              _buildTextField(_nameController, 'Full name', Icons.person_outline),
               const SizedBox(height: 16),
-              // Email Field
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.email_outlined, color: Colors.grey),
-                  hintText: 'abc@email.com',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF5B4EFF)),
-                  ),
-                ),
-              ),
+              _buildTextField(_emailController, 'abc@email.com', Icons.email_outlined, type: TextInputType.emailAddress),
               const SizedBox(height: 16),
-              // Password Field
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  hintText: 'Your password',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF5B4EFF)),
-                  ),
-                ),
-              ),
+              _buildTextField(_passwordController, 'Your password', Icons.lock_outline, isPassword: true,
+                  obscure: _obscurePassword,
+                  onToggle: () => setState(() => _obscurePassword = !_obscurePassword)),
               const SizedBox(height: 16),
-              // Confirm Password Field
-              TextField(
-                controller: _confirmPasswordController,
-                obscureText: _obscureConfirmPassword,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: Colors.grey,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
-                  ),
-                  hintText: 'Confirm password',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey[300]!),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF5B4EFF)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Sign Up Button
+              _buildTextField(_confirmPasswordController, 'Confirm password', Icons.lock_outline, isPassword: true,
+                  obscure: _obscureConfirmPassword,
+                  onToggle: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword)),
+              const SizedBox(height: 32),
               _isLoading
-                  ? Container(
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF5B4EFF),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
-                ),
-              )
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF5B4EFF)))
                   : ElevatedButton(
                 onPressed: _signup,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B4EFF),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
+                  minimumSize: const Size(double.infinity, 56),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'SIGN UP',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Icon(Icons.arrow_forward, size: 20),
-                  ],
-                ),
+                child: const Text('SIGN UP', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 24),
-              // OR Divider
-              Row(
+              const Row(
                 children: [
-                  Expanded(child: Divider(color: Colors.grey[300])),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'OR',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: Colors.grey[300])),
+                  Expanded(child: Divider()),
+                  Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text("OR", style: TextStyle(color: Colors.grey))),
+                  Expanded(child: Divider()),
                 ],
               ),
               const SizedBox(height: 24),
-              // Facebook Sign Up
               OutlinedButton.icon(
                 onPressed: _isLoading ? null : _signInWithFacebook,
                 icon: const Icon(Icons.facebook, color: Colors.blue),
-                label: const Text(
-                  'Sign up with Facebook',
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
-                ),
+                label: const Text('Sign up with Facebook', style: TextStyle(color: Colors.black87)),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: BorderSide(color: Colors.grey[300]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 24),
-              // Sign In Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Already have an account? ',
-                    style: TextStyle(color: Colors.black87),
-                  ),
+                  const Text('Already have an account? '),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      'Sign in',
-                      style: TextStyle(
-                        color: Color(0xFF5B4EFF),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    onTap: () => Navigator.pop(context),
+                    child: const Text('Sign in', style: TextStyle(color: Color(0xFF5B4EFF), fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller,
+      String hint,
+      IconData icon,
+      {bool isPassword = false, bool obscure = false, VoidCallback? onToggle, TextInputType type = TextInputType.text}
+      ) {
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: type,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icon, color: Colors.grey),
+        suffixIcon: isPassword
+            ? IconButton(icon: Icon(obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined), onPressed: onToggle)
+            : null,
+        hintText: hint,
+        filled: true,
+        fillColor: Colors.grey[50],
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[300]!)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF5B4EFF))),
       ),
     );
   }

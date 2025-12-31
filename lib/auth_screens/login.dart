@@ -73,8 +73,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
       });
 
       await authService.signInWithEmailPassword(email, password);
+      bool verified = await authService.isEmailVerified();
+      if(!verified){
+        authService.signOut();
+        _showSnackBar("Email not Verified", isError: true);
+      }
 
-      // Save credentials if Remember Me is checked
       if (_rememberMe) {
         await authService.saveCredentials(email, password);
       }

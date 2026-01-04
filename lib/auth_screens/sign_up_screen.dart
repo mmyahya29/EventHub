@@ -107,9 +107,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
           'bio': 'Welcome to Event Hub!',
           'interests': ['Gaming', 'Music', 'Art'],
         });
+        authService.signOut();
 
         // 4. Send the Verification Email
         await user.sendEmailVerification();
+
+        bool isVerified = await authService.isEmailVerified();
+
+        if(!isVerified){
+          authService.signOut();
+        }
 
         if (mounted) {
           setState(() => _isLoading = false);

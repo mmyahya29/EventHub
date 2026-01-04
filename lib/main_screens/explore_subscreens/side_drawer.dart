@@ -1,15 +1,16 @@
+// Modified: add My Events menu item and import
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/FAQ_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/about_us_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/booked_events.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/chats_list_screen.dart';
 import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/settings_screen.dart';
+import 'package:event_hub/main_screens/explore_subscreens/side_drawer_screens/my_events_screen.dart'; // <-- new import
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
 
 class AppDrawer extends ConsumerStatefulWidget {
-
   const AppDrawer({super.key,});
 
   @override
@@ -54,13 +55,6 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                       size: 35,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
-                    // Replace with actual image:
-                    // child: ClipOval(
-                    //   child: Image.network(
-                    //     'profile_image_url',
-                    //     fit: BoxFit.cover,
-                    //   ),
-                    // ),
                   ),
                   const SizedBox(height: 12),
                   // Name
@@ -89,6 +83,19 @@ class _AppDrawerState extends ConsumerState<AppDrawer> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ChatsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
+                    icon: Icons.calendar_month_outlined,
+                    title: 'My Events',
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MyEventsScreen(),
                         ),
                       );
                     },

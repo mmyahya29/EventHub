@@ -1,3 +1,6 @@
+// Modified: Add optional eventId & eventData to support editing existing events.
+// On submit, if eventId is provided we update instead of creating a new document.
+// Prefills fields when eventData is provided.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,7 +9,10 @@ import 'package:intl/intl.dart';
 import '../services/events_service.dart';
 
 class AddEventScreen extends ConsumerStatefulWidget {
-  const AddEventScreen({Key? key}) : super(key: key);
+  final String? eventId;
+  final Map<String, dynamic>? eventData;
+
+  const AddEventScreen({Key? key, this.eventId, this.eventData}) : super(key: key);
 
   @override
   ConsumerState<AddEventScreen> createState() => _AddEventScreenState();
@@ -39,6 +45,57 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _prefillIfEditing();
+  }
+
+  void _prefillIfEditing() {
+    final ed = widget.eventData;
+    if (ed == null) return;
+
+    _titleController.text = ed['title'] ?? '';
+    _descriptionController.text = ed['description'] ?? '';
+    _locationController.text = ed['location'] ?? '';
+    _addressController.text = ed['address'] ?? '';
+    _priceController.text = (ed['price'] != null) ? ed['price'].toString() : '';
+    _attendeesController.text = (ed['attendees'] != null) ? ed['attendees'].toString() : '';
+    _selectedCategory = ed['category'] ?? 'Music';
+
+    // Date
+    try {
+      final dateField = ed['date'];
+      if (dateField is Timestamp) {
+        _selectedDate = dateField.toDate();
+      } else if (dateField is DateTime) {
+        _selectedDate = dateField;
+      }
+    } catch (_) {}
+
+    // startTime and endTime (strings like '4:00PM')
+    _startTime = _tryParseTimeOfDay(ed['startTime'] as String?);
+    _endTime = _tryParseTimeOfDay(ed['endTime'] as String?);
+  }
+
+  TimeOfDay? _tryParseTimeOfDay(String? s) {
+    if (s == null) return null;
+    try {
+      // Normalize like '4:00PM' or '04:00 PM'
+      final cleaned = s.replaceAll(' ', '').toUpperCase();
+      final match = RegExp(r'^(\d{1,2}):(\d{2})(AM|PM)$').firstMatch(cleaned);
+      if (match != null) {
+        final h = int.parse(match.group(1)!);
+        final m = int.parse(match.group(2)!);
+        final period = match.group(3)!;
+        int hour = h % 12;
+        if (period == 'PM') hour += 12;
+        return TimeOfDay(hour: hour, minute: m);
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
@@ -52,8 +109,8 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime(2100),
       builder: (context, child) {
         return Theme(
@@ -78,7 +135,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
   Future<void> _selectStartTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: _startTime ?? TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -102,7 +159,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
   Future<void> _selectEndTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: _endTime ?? TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -152,7 +209,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
 
     final currentUser = ref.read(authStateProvider).value;
     if (currentUser == null) {
-      _showSnackBar('You must be signed in to create an event', isError: true);
+      _showSnackBar('You must be signed in to create or edit an event', isError: true);
       return;
     }
 
@@ -161,7 +218,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
     });
 
     try {
-      // Combine date and time
+      // Combine date and time for the stored 'date' field (we store start date/time)
       final eventDateTime = DateTime(
         _selectedDate!.year,
         _selectedDate!.month,
@@ -170,7 +227,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
         _startTime!.minute,
       );
 
-      final eventData = {
+      final Map<String, dynamic> eventData = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'location': _locationController.text.trim(),
@@ -185,26 +242,36 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
         'organizerName': currentUser.displayName ?? 'Unknown',
         'price': double.tryParse(_priceController.text.trim()) ?? 0.0,
         'category': _selectedCategory,
-        'imageUrl': '',
+        // keep existing imageUrl if editing and not changing images
+        'imageUrl': widget.eventData != null ? (widget.eventData!['imageUrl'] ?? '') : '',
         'attendees': int.tryParse(_attendeesController.text.trim()) ?? 0,
-        'createdAt': FieldValue.serverTimestamp(),
       };
 
       final eventService = EventService();
-      await eventService.addEvent(eventData);
 
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        _showSnackBar('Event created successfully!', isError: false);
-        Navigator.pop(context);
+      if (widget.eventId != null) {
+        // Update existing event
+        await eventService.updateEvent(widget.eventId!, eventData);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showSnackBar('Event updated successfully!', isError: false);
+          Navigator.pop(context);
+        }
+      } else {
+        // Create new event (includes createdAt)
+        eventData['createdAt'] = FieldValue.serverTimestamp();
+        await eventService.addEvent(eventData);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          _showSnackBar('Event created successfully!', isError: false);
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showSnackBar('Error creating event: $e', isError: true);
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnackBar('Error saving event: $e', isError: true);
+      }
     }
   }
 
@@ -221,6 +288,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.eventId != null;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -230,9 +298,9 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create Event',
-          style: TextStyle(
+        title: Text(
+          isEditing ? 'Edit Event' : 'Create Event',
+          style: const TextStyle(
             color: Colors.black87,
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -332,12 +400,9 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
                         Text(
                           _selectedDate == null
                               ? 'Select event date'
-                              : DateFormat('EEEE, MMMM d, yyyy')
-                              .format(_selectedDate!),
+                              : DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate!),
                           style: TextStyle(
-                            color: _selectedDate == null
-                                ? Colors.grey
-                                : Colors.black87,
+                            color: _selectedDate == null ? Colors.grey : Colors.black87,
                             fontSize: 15,
                           ),
                         ),
@@ -370,17 +435,12 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.access_time,
-                                      color: Colors.grey, size: 20),
+                                  const Icon(Icons.access_time, color: Colors.grey, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _startTime == null
-                                        ? 'Start'
-                                        : _formatTimeOfDay(_startTime!),
+                                    _startTime == null ? 'Start' : _formatTimeOfDay(_startTime!),
                                     style: TextStyle(
-                                      color: _startTime == null
-                                          ? Colors.grey
-                                          : Colors.black87,
+                                      color: _startTime == null ? Colors.grey : Colors.black87,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -412,17 +472,12 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.access_time,
-                                      color: Colors.grey, size: 20),
+                                  const Icon(Icons.access_time, color: Colors.grey, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
-                                    _endTime == null
-                                        ? 'End'
-                                        : _formatTimeOfDay(_endTime!),
+                                    _endTime == null ? 'End' : _formatTimeOfDay(_endTime!),
                                     style: TextStyle(
-                                      color: _endTime == null
-                                          ? Colors.grey
-                                          : Colors.black87,
+                                      color: _endTime == null ? Colors.grey : Colors.black87,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -537,17 +592,17 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Text(
-                        'CREATE EVENT',
-                        style: TextStyle(
+                        widget.eventId != null ? 'UPDATE EVENT' : 'CREATE EVENT',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward, size: 20),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward, size: 20),
                     ],
                   ),
                 ),
@@ -585,9 +640,7 @@ class _AddEventScreenState extends ConsumerState<AddEventScreen> {
       keyboardType: keyboardType,
       validator: validator,
       decoration: InputDecoration(
-        prefixIcon: prefixIcon != null
-            ? Icon(prefixIcon, color: Colors.grey)
-            : null,
+        prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey) : null,
         hintText: hintText,
         hintStyle: const TextStyle(color: Colors.grey),
         filled: true,
